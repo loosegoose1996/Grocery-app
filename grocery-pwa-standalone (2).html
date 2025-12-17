@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Grocery List">
+  <meta name="theme-color" content="#059669">
+  <title>Grocery List</title>
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23059669' width='100' height='100' rx='20'/><text y='70' x='50' text-anchor='middle' font-size='60'>🛒</text></svg>">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #ecfdf5 0%, #ccfbf1 100%); min-height: 100vh; padding: 16px; padding-bottom: 32px; -webkit-tap-highlight-color: transparent; }
+    .container { max-width: 500px; margin: 0 auto; }
+    h1 { text-align: center; color: #065f46; font-size: 24px; margin-bottom: 16px; }
+    .card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .card-title { font-size: 16px; font-weight: 600; color: #1f2937; }
+    .btn { padding: 8px 16px; border-radius: 20px; border: none; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-primary { background: #10b981; color: white; }
+    .btn-primary:active { background: #059669; }
+    .btn-secondary { background: #f3f4f6; color: #4b5563; }
+    .btn-secondary:active { background: #e5e7eb; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:active { background: #dc2626; }
+    .btn-purple { background: #8b5cf6; color: white; }
+    .btn-purple:active { background: #7c3aed; }
+    .btn-indigo { background: #6366f1; color: white; }
+    .btn-indigo:active { background: #4f46e5; }
+    .btn-amber { background: #fbbf24; color: #78350f; }
+    .btn-teal { background: #14b8a6; color: white; }
+    .btn-teal:active { background: #0d9488; }
+    .btn-small { padding: 6px 12px; font-size: 12px; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .input { width: 100%; padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 16px; outline: none; }
+    .input:focus { border-color: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,0.1); }
+    .select { width: 100%; padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 16px; outline: none; background: white; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; border: none; cursor: pointer; transition: all 0.2s; }
+    .chip-default { background: #f3f4f6; color: #374151; }
+    .chip-default:active { background: #e5e7eb; }
+    .chip-selected { background: #10b981; color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.3); }
+    .chip-selected-vacation { background: #ef4444; color: white; box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
+    .chip-selected-todo { background: #3b82f6; color: white; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
+    .chip-highlight { background: #d1fae5; color: #065f46; box-shadow: 0 0 0 2px #10b981; }
+    .chip-highlight-vacation { background: #fee2e2; color: #991b1b; box-shadow: 0 0 0 2px #ef4444; }
+    .chip-highlight-todo { background: #dbeafe; color: #1e40af; box-shadow: 0 0 0 2px #3b82f6; }
+    .chip-badge { position: relative; }
+    .badge { position: absolute; top: -6px; left: -6px; background: #059669; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+    .badge-vacation { position: absolute; top: -6px; left: -6px; background: #dc2626; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+    .badge-todo { position: absolute; top: -6px; left: -6px; background: #2563eb; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+    .list-container { height: 256px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .list-empty { height: 256px; display: flex; align-items: center; justify-content: center; border: 2px dashed #e5e7eb; border-radius: 12px; color: #9ca3af; font-size: 14px; text-align: center; padding: 16px; }
+    .list-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: #ecfdf5; border-radius: 12px; margin-bottom: 8px; }
+    .list-item-vacation { display: flex; align-items: center; gap: 12px; padding: 12px; background: #fee2e2; border-radius: 12px; margin-bottom: 8px; }
+    .list-item-todo { display: flex; align-items: center; gap: 12px; padding: 12px; background: #dbeafe; border-radius: 12px; margin-bottom: 8px; }
+    .list-number { width: 24px; height: 24px; background: #10b981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+    .list-number-vacation { width: 24px; height: 24px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+    .list-number-todo { width: 24px; height: 24px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex-shrink: 0; }
+    .list-item-text { flex: 1; font-size: 14px; color: #1f2937; }
+    .list-item-remove { background: none; border: none; color: #9ca3af; font-size: 18px; cursor: pointer; padding: 4px; }
+    .list-item-remove:active { color: #ef4444; }
+    .db-item { display: flex; align-items: center; gap: 8px; padding: 12px; background: #f9fafb; border-radius: 12px; margin-bottom: 8px; }
+    .db-item-name { flex: 1; font-size: 14px; color: #1f2937; }
+    .db-tag { padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+    .db-tag-grocery { background: #d1fae5; color: #065f46; }
+    .db-tag-vacation { background: #dbeafe; color: #1e40af; }
+    .db-tag-todo { background: #fef3c7; color: #92400e; }
+    .top-btn-container { display: flex; justify-content: center; margin-bottom: 16px; }
+    .link-btn { background: none; border: none; color: #10b981; font-size: 14px; font-weight: 500; cursor: pointer; }
+    .link-btn:active { color: #059669; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .input-row .input { flex: 1; }
+    .hidden { display: none !important; }
+    .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .mb-12 { margin-bottom: 12px; }
+    
+    /* Tabs */
+    .tabs-container { display: flex; gap: 4px; margin-bottom: 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+    .tab { padding: 8px 12px; border-radius: 12px 12px 0 0; border: none; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; background: #e5e7eb; color: #6b7280; display: flex; align-items: center; gap: 6px; }
+    .tab:active { background: #d1d5db; }
+    .tab-active { background: white; color: #065f46; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
+    .tab-name { pointer-events: none; }
+    .tab-close { background: none; border: none; color: #9ca3af; font-size: 14px; cursor: pointer; padding: 2px 4px; line-height: 1; border-radius: 4px; }
+    .tab-close:active { background: rgba(0,0,0,0.1); color: #ef4444; }
+    .tab-active .tab-close { color: #6b7280; }
+    .tab-add { background: #10b981; color: white; font-size: 16px; padding: 8px 14px; }
+    .tab-add:active { background: #059669; }
+    
+    /* Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
+    .modal { background: white; border-radius: 16px; padding: 20px; width: 100%; max-width: 320px; z-index: 1001; }
+    .modal-title { font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 16px; }
+    .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-buttons .btn { flex: 1; padding: 12px 16px; }
+    .preset-list { display: flex; flex-direction: column; gap: 8px; }
+    .preset-btn { padding: 12px; border-radius: 12px; border: 1px solid #e5e7eb; background: white; font-size: 14px; text-align: left; cursor: pointer; }
+    .preset-btn:active { background: #f3f4f6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛒 Grocery List</h1>
+    
+    <div class="top-btn-container">
+      <button class="btn btn-indigo" id="toggleDbBtn">📦 Database</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container" id="tabsContainer"></div>
+
+    <!-- New List Modal -->
+    <div class="modal-overlay hidden" id="newListModal" onclick="closeNewListModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Choose a list name</div>
+        <div class="preset-list" id="presetList"></div>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" onclick="closeNewListModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rename Modal -->
+    <div class="modal-overlay hidden" id="renameModal" onclick="closeRenameModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Rename List</div>
+        <input type="text" class="input" id="renameInput" placeholder="Enter new name...">
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" onclick="closeRenameModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmRename()">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay hidden" id="deleteModal" onclick="closeDeleteModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Delete this list?</div>
+        <p style="color: #6b7280; font-size: 14px;">This cannot be undone.</p>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+          <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Item Category Modal -->
+    <div class="modal-overlay hidden" id="categoryModal" onclick="closeCategoryModal()">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Add "<span id="newItemName"></span>"</div>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">Which list type should this item appear in?</p>
+        <select class="select" id="categorySelect">
+          <option value="grocery">Grocery</option>
+          <option value="vacation">Vacation</option>
+          <option value="todo">To-Do</option>
+        </select>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmAddItem()">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Database View -->
+    <div id="databaseView" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Database (<span id="dbCount">0</span> items)</span>
+        </div>
+        <input type="text" class="input mb-12" id="dbSearch" placeholder="Search database...">
+        <div class="filter-row mb-12">
+          <button class="btn btn-small btn-primary" id="dbFilterAll" onclick="setDbFilter('all')">All</button>
+          <button class="btn btn-small btn-secondary" id="dbFilterGrocery" onclick="setDbFilter('grocery')">Grocery</button>
+          <button class="btn btn-small btn-secondary" id="dbFilterVacation" onclick="setDbFilter('vacation')">Vacation</button>
+          <button class="btn btn-small btn-secondary" id="dbFilterTodo" onclick="setDbFilter('todo')">To-Do</button>
+        </div>
+        <div class="input-row">
+          <input type="text" class="input" id="newDbItem" placeholder="Add new item...">
+          <button class="btn btn-indigo" id="addDbItemBtn">Add</button>
+        </div>
+        <div class="list-container" id="dbList"></div>
+      </div>
+    </div>
+
+    <!-- Main View -->
+    <div id="mainView">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Items</span>
+          <button class="link-btn" id="refreshBtn">↻ Refresh</button>
+        </div>
+        <input type="text" class="input mb-12" id="searchInput" placeholder="Search items...">
+        <div class="chips" id="itemChips"></div>
+      </div>
+
+      <div id="lastListCard" class="card hidden">
+        <div class="card-header">
+          <span class="card-title">Last List</span>
+        </div>
+        <div class="chips" id="lastListChips"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span id="listTitle">Shopping List</span> (<span id="listCount">0</span>)</span>
+          <div class="btn-group">
+            <button class="btn btn-small btn-secondary" id="sortBtn">A-Z</button>
+            <button class="btn btn-small btn-teal" id="newListBtn">Clear</button>
+          </div>
+        </div>
+        <div id="shoppingListEmpty" class="list-empty">Tap items above to add them to your list</div>
+        <div id="shoppingList" class="list-container hidden"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const defaultDatabase = [
+  // Grocery items (45 total)
+  { name: 'Avocados', category: 'grocery' },
+  { name: 'Quinoa', category: 'grocery' },
+  { name: 'Greek Yogurt', category: 'grocery' },
+  { name: 'Salmon', category: 'grocery' },
+  { name: 'Spinach', category: 'grocery' },
+  { name: 'Blueberries', category: 'grocery' },
+  { name: 'Almonds', category: 'grocery' },
+  { name: 'Eggs', category: 'grocery' },
+  { name: 'Chicken Breast', category: 'grocery' },
+  { name: 'Brown Rice', category: 'grocery' },
+  { name: 'Olive Oil', category: 'grocery' },
+  { name: 'Bananas', category: 'grocery' },
+  { name: 'Milk', category: 'grocery' },
+  { name: 'Bread', category: 'grocery' },
+  { name: 'Cheese', category: 'grocery' },
+  { name: 'Tomatoes', category: 'grocery' },
+  { name: 'Onions', category: 'grocery' },
+  { name: 'Garlic', category: 'grocery' },
+  { name: 'Potatoes', category: 'grocery' },
+  { name: 'Carrots', category: 'grocery' },
+  { name: 'Broccoli', category: 'grocery' },
+  { name: 'Bell Peppers', category: 'grocery' },
+  { name: 'Lettuce', category: 'grocery' },
+  { name: 'Cucumber', category: 'grocery' },
+  { name: 'Apples', category: 'grocery' },
+  { name: 'Oranges', category: 'grocery' },
+  { name: 'Strawberries', category: 'grocery' },
+  { name: 'Grapes', category: 'grocery' },
+  { name: 'Lemons', category: 'grocery' },
+  { name: 'Butter', category: 'grocery' },
+  { name: 'Yogurt', category: 'grocery' },
+  { name: 'Cream Cheese', category: 'grocery' },
+  { name: 'Ground Beef', category: 'grocery' },
+  { name: 'Ground Turkey', category: 'grocery' },
+  { name: 'Bacon', category: 'grocery' },
+  { name: 'Pasta', category: 'grocery' },
+  { name: 'Rice', category: 'grocery' },
+  { name: 'Cereal', category: 'grocery' },
+  { name: 'Oatmeal', category: 'grocery' },
+  { name: 'Peanut Butter', category: 'grocery' },
+  { name: 'Honey', category: 'grocery' },
+  { name: 'Coffee', category: 'grocery' },
+  { name: 'Tea', category: 'grocery' },
+  { name: 'Orange Juice', category: 'grocery' },
+  { name: 'Tortillas', category: 'grocery' },
+  // Vacation items (45 total)
+  { name: 'Passport', category: 'vacation' },
+  { name: 'Sunscreen', category: 'vacation' },
+  { name: 'Phone Charger', category: 'vacation' },
+  { name: 'Toothbrush', category: 'vacation' },
+  { name: 'Swimsuit', category: 'vacation' },
+  { name: 'Sunglasses', category: 'vacation' },
+  { name: 'Travel Pillow', category: 'vacation' },
+  { name: 'Headphones', category: 'vacation' },
+  { name: 'Medications', category: 'vacation' },
+  { name: 'Camera', category: 'vacation' },
+  { name: 'Wallet', category: 'vacation' },
+  { name: 'Snacks', category: 'vacation' },
+  { name: 'Book', category: 'vacation' },
+  { name: 'Flip Flops', category: 'vacation' },
+  { name: 'Luggage Lock', category: 'vacation' },
+  { name: 'Toothpaste', category: 'vacation' },
+  { name: 'Deodorant', category: 'vacation' },
+  { name: 'Shampoo', category: 'vacation' },
+  { name: 'Conditioner', category: 'vacation' },
+  { name: 'Razor', category: 'vacation' },
+  { name: 'Underwear', category: 'vacation' },
+  { name: 'Socks', category: 'vacation' },
+  { name: 'T-Shirts', category: 'vacation' },
+  { name: 'Shorts', category: 'vacation' },
+  { name: 'Pants', category: 'vacation' },
+  { name: 'Jacket', category: 'vacation' },
+  { name: 'Hat', category: 'vacation' },
+  { name: 'Belt', category: 'vacation' },
+  { name: 'Dress Shoes', category: 'vacation' },
+  { name: 'Sneakers', category: 'vacation' },
+  { name: 'Laptop', category: 'vacation' },
+  { name: 'Laptop Charger', category: 'vacation' },
+  { name: 'Power Bank', category: 'vacation' },
+  { name: 'Travel Adapter', category: 'vacation' },
+  { name: 'Umbrella', category: 'vacation' },
+  { name: 'First Aid Kit', category: 'vacation' },
+  { name: 'Hand Sanitizer', category: 'vacation' },
+  { name: 'Face Wash', category: 'vacation' },
+  { name: 'Moisturizer', category: 'vacation' },
+  { name: 'Lip Balm', category: 'vacation' },
+  { name: 'Hairbrush', category: 'vacation' },
+  { name: 'Hair Ties', category: 'vacation' },
+  { name: 'Pajamas', category: 'vacation' },
+  { name: 'Boarding Pass', category: 'vacation' },
+  { name: 'Travel Insurance', category: 'vacation' },
+  { name: 'Itinerary', category: 'vacation' },
+  { name: 'Maps', category: 'vacation' },
+  { name: 'Guidebook', category: 'vacation' },
+  { name: 'Earplugs', category: 'vacation' },
+  { name: 'Eye Mask', category: 'vacation' },
+  // To-Do items (45 total)
+  { name: 'Pay Bills', category: 'todo' },
+  { name: 'Call Mom', category: 'todo' },
+  { name: 'Schedule Appointment', category: 'todo' },
+  { name: 'Clean House', category: 'todo' },
+  { name: 'Do Laundry', category: 'todo' },
+  { name: 'Buy Gift', category: 'todo' },
+  { name: 'Send Email', category: 'todo' },
+  { name: 'Workout', category: 'todo' },
+  { name: 'Grocery Shopping', category: 'todo' },
+  { name: 'Fix Bug', category: 'todo' },
+  { name: 'Read Article', category: 'todo' },
+  { name: 'Update Resume', category: 'todo' },
+  { name: 'Book Flight', category: 'todo' },
+  { name: 'Return Package', category: 'todo' },
+  { name: 'Water Plants', category: 'todo' },
+  { name: 'Take Out Trash', category: 'todo' },
+  { name: 'Walk Dog', category: 'todo' },
+  { name: 'Feed Pets', category: 'todo' },
+  { name: 'Vacuum', category: 'todo' },
+  { name: 'Mop Floors', category: 'todo' },
+  { name: 'Wash Dishes', category: 'todo' },
+  { name: 'Make Bed', category: 'todo' },
+  { name: 'Organize Closet', category: 'todo' },
+  { name: 'File Taxes', category: 'todo' },
+  { name: 'Renew License', category: 'todo' },
+  { name: 'Change Oil', category: 'todo' },
+  { name: 'Get Haircut', category: 'todo' },
+  { name: 'Doctor Checkup', category: 'todo' },
+  { name: 'Dentist Appointment', category: 'todo' },
+  { name: 'Pick Up Prescription', category: 'todo' },
+  { name: 'Meal Prep', category: 'todo' },
+  { name: 'Reply to Messages', category: 'todo' },
+  { name: 'Review Budget', category: 'todo' },
+  { name: 'Cancel Subscription', category: 'todo' },
+  { name: 'Backup Files', category: 'todo' },
+  { name: 'Update Software', category: 'todo' },
+  { name: 'Clean Email Inbox', category: 'todo' },
+  { name: 'Write Thank You Note', category: 'todo' },
+  { name: 'RSVP to Event', category: 'todo' },
+  { name: 'Plan Birthday Party', category: 'todo' },
+  { name: 'Research Purchase', category: 'todo' },
+  { name: 'Fix Leaky Faucet', category: 'todo' },
+  { name: 'Change Light Bulbs', category: 'todo' },
+  { name: 'Check Smoke Detectors', category: 'todo' },
+  { name: 'Submit Report', category: 'todo' },
+];
+
+const presetNames = ['Grocery', 'Vacation', 'To-Do'];
+
+// State - Force fresh database if outdated
+let storedDb = JSON.parse(localStorage.getItem('groceryDatabase'));
+let groceryItems;
+if (!storedDb || storedDb.length < 135 || !storedDb[0].category) {
+  groceryItems = [...defaultDatabase];
+  localStorage.setItem('groceryDatabase', JSON.stringify(groceryItems));
+} else {
+  groceryItems = storedDb;
+}
+let lists = JSON.parse(localStorage.getItem('lists')) || [{ id: 1, name: 'Grocery', items: [], lastList: [] }];
+let activeListId = JSON.parse(localStorage.getItem('activeListId')) || 1;
+let suggestions = [];
+let sortAlphabetically = false;
+let showDatabase = false;
+let lastTap = { id: null, time: 0 };
+let pendingItemName = '';
+let pendingFromDatabase = false;
+let dbCategoryFilter = 'all';
+
+// Get active list
+const getActiveList = () => lists.find(l => l.id === activeListId) || lists[0];
+
+// Get list category
+const getListCategory = () => {
+  const list = getActiveList();
+  const baseName = list.name.replace(/ \d+$/, '').toLowerCase();
+  if (baseName === 'grocery') return 'grocery';
+  if (baseName === 'vacation') return 'vacation';
+  if (baseName === 'to-do') return 'todo';
+  return 'grocery';
+};
+
+const getThemeColors = () => {
+  const category = getListCategory();
+  if (category === 'vacation') {
+    return {
+      chip: 'chip-selected-vacation',
+      highlight: 'chip-highlight-vacation',
+      badge: 'badge-vacation',
+      listItem: 'list-item-vacation',
+      listNumber: 'list-number-vacation'
+    };
+  }
+  if (category === 'todo') {
+    return {
+      chip: 'chip-selected-todo',
+      highlight: 'chip-highlight-todo',
+      badge: 'badge-todo',
+      listItem: 'list-item-todo',
+      listNumber: 'list-number-todo'
+    };
+  }
+  return {
+    chip: 'chip-selected',
+    highlight: 'chip-highlight',
+    badge: 'badge',
+    listItem: 'list-item',
+    listNumber: 'list-number'
+  };
+};
+
+// Save functions
+const saveDatabase = () => localStorage.setItem('groceryDatabase', JSON.stringify(groceryItems));
+const saveLists = () => {
+  localStorage.setItem('lists', JSON.stringify(lists));
+  localStorage.setItem('activeListId', JSON.stringify(activeListId));
+};
+
+// Generate unique name
+const getUniqueName = (baseName) => {
+  const existingNames = lists.map(l => l.name);
+  if (!existingNames.includes(baseName)) return baseName;
+  let counter = 1;
+  while (existingNames.includes(`${baseName} ${counter}`)) counter++;
+  return `${baseName} ${counter}`;
+};
+
+// Utility functions
+const getRandomItems = (count = 5) => {
+  const category = getListCategory();
+  let available = groceryItems.filter(i => i.category === category);
+  const shuffled = available.sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count).map(i => i.name);
+};
+
+const getSearchResults = (query) => {
+  if (!query.trim()) return [];
+  const category = getListCategory();
+  let results = groceryItems.filter(i => 
+    i.category === category && i.name.toLowerCase().includes(query.toLowerCase())
+  );
+  return results.map(i => i.name).sort((a, b) => {
+    const aStarts = a.toLowerCase().startsWith(query.toLowerCase());
+    const bStarts = b.toLowerCase().startsWith(query.toLowerCase());
+    if (aStarts && !bStarts) return -1;
+    if (!aStarts && bStarts) return 1;
+    return a.localeCompare(b);
+  });
+};
+
+const getSortedList = () => {
+  const list = getActiveList();
+  if (sortAlphabetically) return [...list.items].sort((a, b) => a.localeCompare(b));
+  return list.items;
+};
+
+// Modal functions
+window.openNewListModal = () => {
+  if (lists.length >= 10) {
+    alert('Maximum of 10 lists reached. Delete a list to create a new one.');
+    return;
+  }
+  document.getElementById('newListModal').classList.remove('hidden');
+  renderPresetList();
+};
+
+window.closeNewListModal = () => {
+  document.getElementById('newListModal').classList.add('hidden');
+};
+
+window.selectPreset = (name) => {
+  const uniqueName = getUniqueName(name);
+  const newId = Math.max(...lists.map(l => l.id), 0) + 1;
+  lists.push({ id: newId, name: uniqueName, items: [], lastList: [] });
+  activeListId = newId;
+  saveLists();
+  closeNewListModal();
+  suggestions = getRandomItems();
+  renderTabs();
+  renderAll();
+};
+
+window.openRenameModal = () => {
+  document.getElementById('renameModal').classList.remove('hidden');
+  document.getElementById('renameInput').value = getActiveList().name;
+  document.getElementById('renameInput').focus();
+};
+
+window.closeRenameModal = () => {
+  document.getElementById('renameModal').classList.add('hidden');
+};
+
+window.confirmRename = () => {
+  const input = document.getElementById('renameInput').value.trim();
+  if (input) {
+    const list = getActiveList();
+    const otherNames = lists.filter(l => l.id !== list.id).map(l => l.name);
+    let newName = input;
+    if (otherNames.includes(input)) {
+      let counter = 1;
+      while (otherNames.includes(`${input} ${counter}`)) counter++;
+      newName = `${input} ${counter}`;
+    }
+    list.name = newName;
+    saveLists();
+    suggestions = getRandomItems();
+    renderTabs();
+    renderAll();
+  }
+  closeRenameModal();
+};
+
+window.openDeleteModal = () => {
+  if (lists.length <= 1) {
+    alert('Cannot delete the only list.');
+    return;
+  }
+  document.getElementById('deleteModal').classList.remove('hidden');
+};
+
+window.closeDeleteModal = () => {
+  document.getElementById('deleteModal').classList.add('hidden');
+};
+
+window.confirmDelete = () => {
+  if (lists.length > 1) {
+    lists = lists.filter(l => l.id !== activeListId);
+    activeListId = lists[0].id;
+    saveLists();
+    suggestions = getRandomItems();
+    renderTabs();
+    renderAll();
+  }
+  closeDeleteModal();
+};
+
+window.openCategoryModal = (itemName, fromDatabase = false) => {
+  pendingItemName = itemName;
+  pendingFromDatabase = fromDatabase;
+  document.getElementById('newItemName').textContent = itemName;
+  document.getElementById('categorySelect').value = getListCategory();
+  document.getElementById('categoryModal').classList.remove('hidden');
+};
+
+window.closeCategoryModal = () => {
+  document.getElementById('categoryModal').classList.add('hidden');
+  pendingItemName = '';
+  pendingFromDatabase = false;
+};
+
+window.confirmAddItem = () => {
+  const category = document.getElementById('categorySelect').value;
+  
+  if (pendingItemName) {
+    const exists = groceryItems.some(i => i.name.toLowerCase() === pendingItemName.toLowerCase());
+    if (!exists) {
+      groceryItems.push({ name: pendingItemName, category: category });
+      saveDatabase();
+    }
+    
+    if (!pendingFromDatabase) {
+      const list = getActiveList();
+      if (!list.items.includes(pendingItemName)) {
+        list.items.push(pendingItemName);
+        saveLists();
+      }
+      document.getElementById('searchInput').value = '';
+      renderItemChips();
+      renderShoppingList();
+    } else {
+      renderDatabase();
+    }
+  }
+  closeCategoryModal();
+};
+
+// Render functions
+const renderPresetList = () => {
+  const container = document.getElementById('presetList');
+  container.innerHTML = presetNames.map(name => 
+    `<button class="preset-btn" onclick="selectPreset('${name}')">${name}</button>`
+  ).join('');
+};
+
+const renderTabs = () => {
+  const container = document.getElementById('tabsContainer');
+  const tabs = lists.map(list => {
+    const closeBtn = lists.length > 1 ? `<button class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">✕</button>` : '';
+    return `<div class="tab ${list.id === activeListId ? 'tab-active' : ''}" onclick="handleTabTap(${list.id})" data-id="${list.id}"><span class="tab-name">${list.name}</span>${closeBtn}</div>`;
+  }).join('');
+  const addTab = lists.length < 10 ? `<button class="tab tab-add" onclick="openNewListModal()">+</button>` : '';
+  container.innerHTML = tabs + addTab;
+};
+
+window.handleTabTap = (id) => {
+  const now = Date.now();
+  if (lastTap.id === id && now - lastTap.time < 400) {
+    activeListId = id;
+    saveLists();
+    openRenameModal();
+    lastTap = { id: null, time: 0 };
+  } else {
+    lastTap = { id, time: now };
+    switchList(id);
+  }
+};
+
+window.switchList = (id) => {
+  activeListId = id;
+  saveLists();
+  sortAlphabetically = false;
+  suggestions = getRandomItems();
+  renderTabs();
+  renderAll();
+  updateSortButton();
+};
+
+window.deleteList = (id) => {
+  if (lists.length <= 1) {
+    alert('Cannot delete the only list.');
+    return;
+  }
+  activeListId = id;
+  openDeleteModal();
+};
+
+const renderItemChips = () => {
+  const container = document.getElementById('itemChips');
+  const searchInput = document.getElementById('searchInput');
+  const query = searchInput.value;
+  const refreshBtn = document.getElementById('refreshBtn');
+  const list = getActiveList();
+  const theme = getThemeColors();
+  
+  let items = query.trim() ? getSearchResults(query) : suggestions;
+  refreshBtn.classList.toggle('hidden', query.trim().length > 0);
+  
+  if (query.trim() && items.length === 0) {
+    container.innerHTML = `
+      <div>
+        <p style="color: #9ca3af; font-size: 14px; margin-bottom: 8px;">No items found</p>
+        <button class="btn btn-primary" onclick="openCategoryModal('${query.trim().replace(/'/g, "\\'")}')">+ Add "${query.trim()}"</button>
+      </div>
+    `;
+    return;
+  }
+  
+  container.innerHTML = items.map((item, index) => {
+    const isSelected = list.items.includes(item);
+    const isFirst = query.trim() && index === 0;
+    const chipClass = isSelected ? `chip ${theme.chip}` : (isFirst ? `chip ${theme.highlight}` : 'chip chip-default');
+    const badge = isFirst ? `<span class="${theme.badge}">↵</span>` : '';
+    return `<div class="chip-badge">${badge}<button class="${chipClass}" onclick="toggleItem('${item.replace(/'/g, "\\'")}')">${item}</button></div>`;
+  }).join('');
+};
+
+const renderLastList = () => {
+  const card = document.getElementById('lastListCard');
+  const container = document.getElementById('lastListChips');
+  const list = getActiveList();
+  const theme = getThemeColors();
+  
+  if (list.lastList.length === 0) {
+    card.classList.add('hidden');
+    return;
+  }
+  
+  card.classList.remove('hidden');
+  container.innerHTML = list.lastList.map(item => {
+    const isSelected = list.items.includes(item);
+    const chipClass = isSelected ? `chip ${theme.chip}` : 'chip chip-default';
+    return `<button class="${chipClass}" onclick="addFromLastList('${item.replace(/'/g, "\\'")}')">${item}</button>`;
+  }).join('');
+};
+
+const getListDisplayName = () => {
+  const list = getActiveList();
+  const baseName = list.name.replace(/ \d+$/, '').toLowerCase();
+  if (baseName === 'grocery') return 'Grocery List';
+  if (baseName === 'vacation') return 'Vacation List';
+  if (baseName === 'to-do') return 'To-Do List';
+  return 'Shopping List';
+};
+
+const renderShoppingList = () => {
+  const listContainer = document.getElementById('shoppingList');
+  const emptyContainer = document.getElementById('shoppingListEmpty');
+  const countSpan = document.getElementById('listCount');
+  const titleSpan = document.getElementById('listTitle');
+  const list = getActiveList();
+  const theme = getThemeColors();
+  
+  titleSpan.textContent = getListDisplayName();
+  countSpan.textContent = list.items.length;
+  
+  if (list.items.length === 0) {
+    listContainer.classList.add('hidden');
+    emptyContainer.classList.remove('hidden');
+    return;
+  }
+  
+  listContainer.classList.remove('hidden');
+  emptyContainer.classList.add('hidden');
+  
+  const sorted = getSortedList();
+  listContainer.innerHTML = sorted.map((item, index) => `
+    <div class="${theme.listItem}">
+      <span class="${theme.listNumber}">${index + 1}</span>
+      <span class="list-item-text">${item}</span>
+      <button class="list-item-remove" onclick="toggleItem('${item.replace(/'/g, "\\'")}')">✕</button>
+    </div>
+  `).join('');
+};
+
+window.setDbFilter = (filter) => {
+  dbCategoryFilter = filter;
+  updateDbFilterButtons();
+  renderDatabase();
+};
+
+const updateDbFilterButtons = () => {
+  document.getElementById('dbFilterAll').className = `btn btn-small ${dbCategoryFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('dbFilterGrocery').className = `btn btn-small ${dbCategoryFilter === 'grocery' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('dbFilterVacation').className = `btn btn-small ${dbCategoryFilter === 'vacation' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('dbFilterTodo').className = `btn btn-small ${dbCategoryFilter === 'todo' ? 'btn-primary' : 'btn-secondary'}`;
+};
+
+const renderDatabase = () => {
+  const container = document.getElementById('dbList');
+  const countSpan = document.getElementById('dbCount');
+  const searchInput = document.getElementById('dbSearch');
+  const query = searchInput.value.toLowerCase();
+  
+  let items = groceryItems;
+  if (dbCategoryFilter !== 'all') {
+    items = items.filter(i => i.category === dbCategoryFilter);
+  }
+  if (query) items = items.filter(i => i.name.toLowerCase().includes(query));
+  items = items.sort((a, b) => a.name.localeCompare(b.name));
+  
+  countSpan.textContent = items.length;
+  
+  container.innerHTML = items.map(item => {
+    const tagClass = item.category === 'grocery' ? 'db-tag-grocery' : (item.category === 'vacation' ? 'db-tag-vacation' : 'db-tag-todo');
+    const tagText = item.category === 'grocery' ? 'Grocery' : (item.category === 'vacation' ? 'Vacation' : 'To-Do');
+    return `
+    <div class="db-item">
+      <span class="db-item-name">${item.name}</span>
+      <span class="db-tag ${tagClass}">${tagText}</span>
+      <button class="list-item-remove" onclick="removeFromDatabase('${item.name.replace(/'/g, "\\'")}')">✕</button>
+    </div>
+  `}).join('');
+};
+
+const renderAll = () => {
+  renderItemChips();
+  renderShoppingList();
+  renderLastList();
+};
+
+const updateSortButton = () => {
+  const sortBtn = document.getElementById('sortBtn');
+  sortBtn.className = `btn btn-small ${sortAlphabetically ? 'btn-purple' : 'btn-secondary'}`;
+  sortBtn.textContent = sortAlphabetically ? '✓ A-Z' : 'A-Z';
+};
+
+// Action functions
+window.toggleItem = (item) => {
+  const list = getActiveList();
+  if (list.items.includes(item)) {
+    list.items = list.items.filter(i => i !== item);
+  } else {
+    list.items.push(item);
+  }
+  saveLists();
+  renderItemChips();
+  renderShoppingList();
+  renderLastList();
+};
+
+window.addFromLastList = (item) => {
+  const list = getActiveList();
+  if (!list.items.includes(item)) {
+    list.items.push(item);
+    saveLists();
+    renderItemChips();
+    renderShoppingList();
+    renderLastList();
+  }
+};
+
+window.addCustomItem = (item) => {
+  const list = getActiveList();
+  if (item && !list.items.includes(item)) {
+    list.items.push(item);
+    const exists = groceryItems.some(i => i.name.toLowerCase() === item.toLowerCase());
+    if (!exists) {
+      openCategoryModal(item);
+      return;
+    }
+    document.getElementById('searchInput').value = '';
+    saveLists();
+    renderItemChips();
+    renderShoppingList();
+  }
+};
+
+window.removeFromDatabase = (name) => {
+  groceryItems = groceryItems.filter(i => i.name !== name);
+  lists.forEach(list => {
+    list.items = list.items.filter(i => i !== name);
+    list.lastList = list.lastList.filter(i => i !== name);
+  });
+  saveDatabase();
+  saveLists();
+  renderDatabase();
+  renderItemChips();
+  renderShoppingList();
+  renderLastList();
+};
+
+// Initialize
+suggestions = getRandomItems();
+
+// Event listeners
+document.getElementById('toggleDbBtn').addEventListener('click', () => {
+  showDatabase = !showDatabase;
+  document.getElementById('databaseView').classList.toggle('hidden', !showDatabase);
+  document.getElementById('mainView').classList.toggle('hidden', showDatabase);
+  document.getElementById('tabsContainer').classList.toggle('hidden', showDatabase);
+  document.getElementById('toggleDbBtn').textContent = showDatabase ? '← Back to List' : '📦 Database';
+  if (showDatabase) renderDatabase();
+});
+
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  suggestions = getRandomItems();
+  renderItemChips();
+});
+
+document.getElementById('searchInput').addEventListener('input', renderItemChips);
+
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const query = e.target.value.trim();
+    const results = getSearchResults(query);
+    const list = getActiveList();
+    if (results.length > 0 && !list.items.includes(results[0])) {
+      list.items.push(results[0]);
+      saveLists();
+      e.target.value = '';
+      renderItemChips();
+      renderShoppingList();
+    } else if (results.length === 0 && query) {
+      openCategoryModal(query);
+    }
+  }
+});
+
+document.getElementById('sortBtn').addEventListener('click', () => {
+  sortAlphabetically = !sortAlphabetically;
+  updateSortButton();
+  renderShoppingList();
+});
+
+document.getElementById('newListBtn').addEventListener('click', () => {
+  const list = getActiveList();
+  if (list.items.length > 0) {
+    list.lastList = [...list.items];
+  }
+  list.items = [];
+  sortAlphabetically = false;
+  suggestions = getRandomItems();
+  saveLists();
+  updateSortButton();
+  renderItemChips();
+  renderShoppingList();
+  renderLastList();
+});
+
+document.getElementById('renameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') confirmRename();
+});
+
+document.getElementById('dbSearch').addEventListener('input', renderDatabase);
+
+document.getElementById('newDbItem').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('addDbItemBtn').click();
+});
+
+document.getElementById('addDbItemBtn').addEventListener('click', () => {
+  const input = document.getElementById('newDbItem');
+  const name = input.value.trim();
+  if (name && !groceryItems.some(i => i.name.toLowerCase() === name.toLowerCase())) {
+    openCategoryModal(name, true);
+    input.value = '';
+  }
+});
+
+// Initial render
+renderTabs();
+renderAll();
+updateSortButton();
+</script>
+</body>
+</html>
