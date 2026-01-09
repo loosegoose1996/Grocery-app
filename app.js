@@ -1152,6 +1152,59 @@ document.getElementById('newIngredientName').addEventListener('blur', () => {
 
 document.getElementById('recipeSearch').addEventListener('input', renderRecipeList);
 
+// Modal close buttons
+document.getElementById('newListModal').addEventListener('click', closeNewListModal);
+document.getElementById('closeNewListModalBtn').addEventListener('click', closeNewListModal);
+document.getElementById('renameModal').addEventListener('click', closeRenameModal);
+document.getElementById('closeRenameModalBtn').addEventListener('click', closeRenameModal);
+document.getElementById('confirmRenameBtn').addEventListener('click', confirmRename);
+document.getElementById('deleteModal').addEventListener('click', closeDeleteModal);
+document.getElementById('closeDeleteModalBtn').addEventListener('click', closeDeleteModal);
+document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
+document.getElementById('categoryModal').addEventListener('click', closeCategoryModal);
+document.getElementById('closeCategoryModalBtn').addEventListener('click', closeCategoryModal);
+document.getElementById('confirmAddItemBtn').addEventListener('click', confirmAddItem);
+
+// Import/Export
+document.getElementById('importExportBtn').addEventListener('click', openImportExportModal);
+document.getElementById('importExportModal').addEventListener('click', closeImportExportModal);
+document.getElementById('closeImportExportModalBtn').addEventListener('click', closeImportExportModal);
+document.getElementById('exportDataBtn').addEventListener('click', exportData);
+document.getElementById('importFileInput').addEventListener('change', importData);
+
+// Recipe modals
+document.getElementById('newRecipeBtn').addEventListener('click', openNewRecipeModal);
+document.getElementById('recipeModal').addEventListener('click', closeRecipeModal);
+document.getElementById('closeRecipeModalBtn').addEventListener('click', closeRecipeModal);
+document.getElementById('saveRecipeBtn').addEventListener('click', saveRecipe);
+
+document.getElementById('recipeDetailModal').addEventListener('click', closeRecipeDetailModal);
+document.getElementById('closeRecipeDetailModalBtn').addEventListener('click', closeRecipeDetailModal);
+document.getElementById('editFromDetailBtn').addEventListener('click', editFromDetail);
+document.getElementById('deleteFromDetailBtn').addEventListener('click', deleteFromDetail);
+document.getElementById('addToListFromDetailBtn').addEventListener('click', addToListFromDetail);
+
+document.getElementById('deleteRecipeModal').addEventListener('click', closeDeleteRecipeModal);
+document.getElementById('closeDeleteRecipeModalBtn').addEventListener('click', closeDeleteRecipeModal);
+document.getElementById('confirmDeleteRecipeBtn').addEventListener('click', confirmDeleteRecipe);
+
+document.getElementById('addToListModal').addEventListener('click', closeAddToListModal);
+document.getElementById('closeAddToListModalBtn').addEventListener('click', closeAddToListModal);
+document.getElementById('addRecipeToNewListBtn').addEventListener('click', addRecipeToNewList);
+
+// Recipe filters
+document.getElementById('recipeFilterAll').addEventListener('click', () => setRecipeFilter('all'));
+document.getElementById('recipeFilterBreakfast').addEventListener('click', () => setRecipeFilter('breakfast'));
+document.getElementById('recipeFilterLunch').addEventListener('click', () => setRecipeFilter('lunch'));
+document.getElementById('recipeFilterDinner').addEventListener('click', () => setRecipeFilter('dinner'));
+document.getElementById('recipeFilterDessert').addEventListener('click', () => setRecipeFilter('dessert'));
+
+// Database filters
+document.getElementById('dbFilterAll').addEventListener('click', () => setDbFilter('all'));
+document.getElementById('dbFilterGrocery').addEventListener('click', () => setDbFilter('grocery'));
+document.getElementById('dbFilterVacation').addEventListener('click', () => setDbFilter('vacation'));
+document.getElementById('dbFilterTodo').addEventListener('click', () => setDbFilter('todo'));
+
 // Initial render
 renderTabs();
 renderAll();
