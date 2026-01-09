@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,64 +18,48 @@
     <div class="top-btn-container">
       <button class="btn btn-indigo" id="toggleDbBtn">📦 Database</button>
       <button class="btn btn-amber" id="toggleRecipesBtn">📖 Recipes</button>
-      <button class="btn btn-secondary" id="importExportBtn" onclick="openImportExportModal()">⚙️</button>
-    </div>
-
-    <!-- Import/Export Modal -->
-    <div class="modal-overlay hidden" id="importExportModal" onclick="closeImportExportModal()">
-      <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">Import / Export Data</div>
-        <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Export all your lists, recipes, and database to a JSON file, or import from a previous backup.</p>
-        <button class="btn btn-primary btn-full mb-12" onclick="exportData()">📤 Export Data</button>
-        <label class="btn btn-secondary btn-full" style="display: block; text-align: center; cursor: pointer;">
-          📥 Import Data
-          <input type="file" accept=".json" id="importFileInput" style="display: none;" onchange="importData(event)">
-        </label>
-        <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeImportExportModal()">Close</button>
-        </div>
-      </div>
+      <button class="btn btn-secondary" id="importExportBtn">⚙️</button>
     </div>
 
     <div class="tabs-container" id="tabsContainer"></div>
 
     <!-- New List Modal -->
-    <div class="modal-overlay hidden" id="newListModal" onclick="closeNewListModal()">
+    <div class="modal-overlay hidden" id="newListModal">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Choose a list name</div>
         <div class="preset-list" id="presetList"></div>
         <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeNewListModal()">Cancel</button>
+          <button class="btn btn-secondary" id="closeNewListModalBtn">Cancel</button>
         </div>
       </div>
     </div>
 
     <!-- Rename Modal -->
-    <div class="modal-overlay hidden" id="renameModal" onclick="closeRenameModal()">
+    <div class="modal-overlay hidden" id="renameModal">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Rename List</div>
         <input type="text" class="input" id="renameInput" placeholder="Enter new name...">
         <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeRenameModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="confirmRename()">Save</button>
+          <button class="btn btn-secondary" id="closeRenameModalBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmRenameBtn">Save</button>
         </div>
       </div>
     </div>
 
     <!-- Delete Confirm Modal -->
-    <div class="modal-overlay hidden" id="deleteModal" onclick="closeDeleteModal()">
+    <div class="modal-overlay hidden" id="deleteModal">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Delete this list?</div>
         <p style="color: #6b7280; font-size: 14px;">This cannot be undone.</p>
         <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-          <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+          <button class="btn btn-secondary" id="closeDeleteModalBtn">Cancel</button>
+          <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
         </div>
       </div>
     </div>
 
     <!-- Add Item Category Modal -->
-    <div class="modal-overlay hidden" id="categoryModal" onclick="closeCategoryModal()">
+    <div class="modal-overlay hidden" id="categoryModal">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Add "<span id="newItemName"></span>"</div>
         <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">Which list type should this item appear in?</p>
@@ -86,14 +69,66 @@
           <option value="todo">To-Do</option>
         </select>
         <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="confirmAddItem()">Add</button>
+          <button class="btn btn-secondary" id="closeCategoryModalBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmAddItemBtn">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import/Export Modal -->
+    <div class="modal-overlay hidden" id="importExportModal">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Import / Export Data</div>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Export all your lists, recipes, and database to a JSON file, or import from a previous backup.</p>
+        <button class="btn btn-primary btn-full mb-12" id="exportDataBtn">📤 Export Data</button>
+        <label class="btn btn-secondary btn-full" style="display: block; text-align: center; cursor: pointer;">
+          📥 Import Data
+          <input type="file" accept=".json" id="importFileInput" style="display: none;">
+        </label>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="closeImportExportModalBtn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Recipe Confirm Modal -->
+    <div class="modal-overlay hidden" id="deleteRecipeModal">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Delete Recipe?</div>
+        <p style="color: #6b7280; font-size: 14px;">This cannot be undone.</p>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="closeDeleteRecipeModalBtn">Cancel</button>
+          <button class="btn btn-danger" id="confirmDeleteRecipeBtn">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recipe Detail Modal -->
+    <div class="modal-overlay hidden" id="recipeDetailModal">
+      <div class="modal modal-large" onclick="event.stopPropagation()">
+        <div class="recipe-detail-header">
+          <span class="modal-title" id="recipeDetailTitle"></span>
+          <span class="recipe-card-category" id="recipeDetailCategory"></span>
+        </div>
+        <div class="recipe-detail-section">
+          <div class="card-title mb-8">Ingredients</div>
+          <div id="recipeDetailIngredients" class="recipe-ingredients-list"></div>
+        </div>
+        <div class="recipe-detail-section">
+          <div class="card-title mb-8">Instructions</div>
+          <div id="recipeDetailInstructions" class="recipe-instructions"></div>
+        </div>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="closeRecipeDetailModalBtn">Close</button>
+          <button class="btn btn-secondary" id="editFromDetailBtn">Edit</button>
+          <button class="btn btn-danger" id="deleteFromDetailBtn">Delete</button>
+          <button class="btn btn-primary" id="addToListFromDetailBtn">+ Add to List</button>
         </div>
       </div>
     </div>
 
     <!-- Recipe Modal -->
-    <div class="modal-overlay hidden" id="recipeModal" onclick="closeRecipeModal()">
+    <div class="modal-overlay hidden" id="recipeModal">
       <div class="modal modal-large" onclick="event.stopPropagation()">
         <div class="modal-title" id="recipeModalTitle">New Recipe</div>
         <input type="text" class="input mb-12" id="recipeNameInput" placeholder="Recipe name...">
@@ -116,57 +151,21 @@
         <div class="card-title mb-8">Instructions</div>
         <textarea class="input textarea mb-12" id="recipeInstructions" placeholder="Enter cooking instructions..."></textarea>
         <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeRecipeModal()">Cancel</button>
-          <button class="btn btn-primary" onclick="saveRecipe()">Save</button>
+          <button class="btn btn-secondary" id="closeRecipeModalBtn">Cancel</button>
+          <button class="btn btn-primary" id="saveRecipeBtn">Save</button>
         </div>
       </div>
     </div>
 
     <!-- Add Recipe to List Modal -->
-    <div class="modal-overlay hidden" id="addToListModal" onclick="closeAddToListModal()">
+    <div class="modal-overlay hidden" id="addToListModal">
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Add to List</div>
         <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">Choose a list or create new:</p>
         <div id="existingListsContainer" class="preset-list mb-12"></div>
-        <button class="btn btn-primary btn-full" onclick="addRecipeToNewList()">+ New List from Recipe</button>
+        <button class="btn btn-primary btn-full" id="addRecipeToNewListBtn">+ New List from Recipe</button>
         <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeAddToListModal()">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Delete Recipe Confirm Modal -->
-    <div class="modal-overlay hidden" id="deleteRecipeModal" onclick="closeDeleteRecipeModal()">
-      <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">Delete Recipe?</div>
-        <p style="color: #6b7280; font-size: 14px;">This cannot be undone.</p>
-        <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeDeleteRecipeModal()">Cancel</button>
-          <button class="btn btn-danger" onclick="confirmDeleteRecipe()">Delete</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recipe Detail Modal -->
-    <div class="modal-overlay hidden" id="recipeDetailModal" onclick="closeRecipeDetailModal()">
-      <div class="modal modal-large" onclick="event.stopPropagation()">
-        <div class="recipe-detail-header">
-          <span class="modal-title" id="recipeDetailTitle"></span>
-          <span class="recipe-card-category" id="recipeDetailCategory"></span>
-        </div>
-        <div class="recipe-detail-section">
-          <div class="card-title mb-8">Ingredients</div>
-          <div id="recipeDetailIngredients" class="recipe-ingredients-list"></div>
-        </div>
-        <div class="recipe-detail-section">
-          <div class="card-title mb-8">Instructions</div>
-          <div id="recipeDetailInstructions" class="recipe-instructions"></div>
-        </div>
-        <div class="modal-buttons">
-          <button class="btn btn-secondary" onclick="closeRecipeDetailModal()">Close</button>
-          <button class="btn btn-secondary" onclick="editFromDetail()">Edit</button>
-          <button class="btn btn-danger" onclick="deleteFromDetail()">Delete</button>
-          <button class="btn btn-primary" onclick="addToListFromDetail()">+ Add to List</button>
+          <button class="btn btn-secondary" id="closeAddToListModalBtn">Cancel</button>
         </div>
       </div>
     </div>
@@ -176,15 +175,15 @@
       <div class="card">
         <div class="card-header">
           <span class="card-title">Recipes (<span id="recipeCount">0</span>)</span>
-          <button class="btn btn-primary" onclick="openNewRecipeModal()">+ New</button>
+          <button class="btn btn-primary" id="newRecipeBtn">+ New</button>
         </div>
         <input type="text" class="input mb-12" id="recipeSearch" placeholder="Search recipes...">
         <div class="filter-row mb-12">
-          <button class="btn btn-small btn-primary" id="recipeFilterAll" onclick="setRecipeFilter('all')">All</button>
-          <button class="btn btn-small btn-secondary" id="recipeFilterBreakfast" onclick="setRecipeFilter('breakfast')">Breakfast</button>
-          <button class="btn btn-small btn-secondary" id="recipeFilterLunch" onclick="setRecipeFilter('lunch')">Lunch</button>
-          <button class="btn btn-small btn-secondary" id="recipeFilterDinner" onclick="setRecipeFilter('dinner')">Dinner</button>
-          <button class="btn btn-small btn-secondary" id="recipeFilterDessert" onclick="setRecipeFilter('dessert')">Dessert</button>
+          <button class="btn btn-small btn-primary" id="recipeFilterAll">All</button>
+          <button class="btn btn-small btn-secondary" id="recipeFilterBreakfast">Breakfast</button>
+          <button class="btn btn-small btn-secondary" id="recipeFilterLunch">Lunch</button>
+          <button class="btn btn-small btn-secondary" id="recipeFilterDinner">Dinner</button>
+          <button class="btn btn-small btn-secondary" id="recipeFilterDessert">Dessert</button>
         </div>
         <div class="list-container" id="recipeList"></div>
       </div>
@@ -198,10 +197,10 @@
         </div>
         <input type="text" class="input mb-12" id="dbSearch" placeholder="Search database...">
         <div class="filter-row mb-12">
-          <button class="btn btn-small btn-primary" id="dbFilterAll" onclick="setDbFilter('all')">All</button>
-          <button class="btn btn-small btn-secondary" id="dbFilterGrocery" onclick="setDbFilter('grocery')">Grocery</button>
-          <button class="btn btn-small btn-secondary" id="dbFilterVacation" onclick="setDbFilter('vacation')">Vacation</button>
-          <button class="btn btn-small btn-secondary" id="dbFilterTodo" onclick="setDbFilter('todo')">To-Do</button>
+          <button class="btn btn-small btn-primary" id="dbFilterAll">All</button>
+          <button class="btn btn-small btn-secondary" id="dbFilterGrocery">Grocery</button>
+          <button class="btn btn-small btn-secondary" id="dbFilterVacation">Vacation</button>
+          <button class="btn btn-small btn-secondary" id="dbFilterTodo">To-Do</button>
         </div>
         <div class="input-row">
           <input type="text" class="input" id="newDbItem" placeholder="Add new item...">
