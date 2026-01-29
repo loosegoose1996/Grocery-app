@@ -16,9 +16,9 @@
     <h1>🛒 Grocery List</h1>
     
     <div class="top-btn-container">
-      <button class="btn btn-indigo" id="toggleDbBtn">📦 Database</button>
-      <button class="btn btn-amber" id="toggleRecipesBtn">📖 Recipes</button>
-      <button class="btn btn-secondary" id="importExportBtn">⚙️</button>
+      <button class="btn btn-indigo" id="toggleDbBtn">Database</button>
+      <button class="btn btn-amber" id="toggleRecipesBtn">Recipes</button>
+      <button class="btn btn-secondary" id="importExportBtn">Settings</button>
     </div>
 
     <div class="tabs-container" id="tabsContainer"></div>
@@ -75,16 +75,29 @@
       </div>
     </div>
 
-    <!-- Import/Export Modal -->
+    <!-- Settings Modal -->
     <div class="modal-overlay hidden" id="importExportModal">
       <div class="modal" onclick="event.stopPropagation()">
-        <div class="modal-title">Import / Export Data</div>
-        <p style="color: #6b7280; font-size: 14px; margin-bottom: 16px;">Export all your lists, recipes, and database to a JSON file, or import from a previous backup.</p>
-        <button class="btn btn-primary btn-full mb-12" id="exportDataBtn">📤 Export Data</button>
-        <label class="btn btn-secondary btn-full" style="display: block; text-align: center; cursor: pointer;">
-          📥 Import Data
-          <input type="file" accept=".json" id="importFileInput" style="display: none;">
-        </label>
+        <div class="modal-title">Settings</div>
+        
+        <div class="settings-section">
+          <div class="settings-label">Theme</div>
+          <div class="theme-toggle-container">
+            <button class="theme-btn" id="themeLightBtn">☀️ Light</button>
+            <button class="theme-btn" id="themeDarkBtn">🌙 Dark</button>
+            <button class="theme-btn" id="themeSystemBtn">⚙️ System</button>
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <div class="settings-label">Data</div>
+          <button class="btn btn-primary btn-full mb-12" id="exportDataBtn">📤 Export Data</button>
+          <label class="btn btn-secondary btn-full" style="display: block; text-align: center; cursor: pointer;">
+            📥 Import Data
+            <input type="file" accept=".json" id="importFileInput" style="display: none;">
+          </label>
+        </div>
+        
         <div class="modal-buttons">
           <button class="btn btn-secondary" id="closeImportExportModalBtn">Close</button>
         </div>
