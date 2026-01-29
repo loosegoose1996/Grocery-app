@@ -170,6 +170,38 @@ let editingRecipeId = null;
 let currentRecipeIngredients = [];
 let pendingRecipeId = null;
 let autocompleteIndex = -1;
+let currentTheme = localStorage.getItem('theme') || 'system';
+
+// Apply theme on load
+function applyTheme(theme) {
+  currentTheme = theme;
+  localStorage.setItem('theme', theme);
+  
+  if (theme === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+  
+  updateThemeButtons();
+}
+
+function updateThemeButtons() {
+  document.getElementById('themeLightBtn').classList.toggle('active', currentTheme === 'light');
+  document.getElementById('themeDarkBtn').classList.toggle('active', currentTheme === 'dark');
+  document.getElementById('themeSystemBtn').classList.toggle('active', currentTheme === 'system');
+}
+
+// Listen for system theme changes
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+  if (currentTheme === 'system') {
+    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+  }
+});
+
+// Apply theme immediately
+applyTheme(currentTheme);
 
 // Helper functions
 const getActiveList = () => lists.find(l => l.id === activeListId) || lists[0];
@@ -985,6 +1017,9 @@ function toggleItem(item) {
     list.items.splice(existingIndex, 1);
   } else {
     list.items.push({ name: item, qty: '' });
+    // Clear search field when adding an item
+    document.getElementById('searchInput').value = '';
+    suggestions = getRandomItems();
   }
   saveLists();
   renderItemChips();
@@ -1198,6 +1233,11 @@ document.getElementById('recipeFilterBreakfast').addEventListener('click', () =>
 document.getElementById('recipeFilterLunch').addEventListener('click', () => setRecipeFilter('lunch'));
 document.getElementById('recipeFilterDinner').addEventListener('click', () => setRecipeFilter('dinner'));
 document.getElementById('recipeFilterDessert').addEventListener('click', () => setRecipeFilter('dessert'));
+
+// Theme buttons
+document.getElementById('themeLightBtn').addEventListener('click', () => applyTheme('light'));
+document.getElementById('themeDarkBtn').addEventListener('click', () => applyTheme('dark'));
+document.getElementById('themeSystemBtn').addEventListener('click', () => applyTheme('system'));
 
 // Database filters
 document.getElementById('dbFilterAll').addEventListener('click', () => setDbFilter('all'));
