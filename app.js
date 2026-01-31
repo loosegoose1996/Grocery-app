@@ -154,9 +154,22 @@ if (!storedDb || storedDb.length < 135 || !storedDb[0].category) {
   groceryItems = storedDb;
 }
 
-let lists = JSON.parse(localStorage.getItem('lists')) || [{ id: 1, name: 'Grocery', items: [], lastList: [] }];
+let lists = JSON.parse(localStorage.getItem('lists')) || [{ id: 1, name: 'Grocery', category: 'grocery', items: [], lastList: [] }];
+
+// Migration: ensure all lists have a category
+lists = lists.map(list => {
+  if (!list.category) {
+    const baseName = list.name.replace(/ \d+$/, '').toLowerCase();
+    if (baseName === 'vacation') list.category = 'vacation';
+    else if (baseName === 'to-do') list.category = 'todo';
+    else list.category = 'grocery';
+  }
+  return list;
+});
+localStorage.setItem('lists', JSON.stringify(lists));
 let activeListId = JSON.parse(localStorage.getItem('activeListId')) || 1;
 let recipes = JSON.parse(localStorage.getItem('recipes')) || [];
+let savedLists = JSON.parse(localStorage.getItem('savedLists')) || [];
 let suggestions = [];
 let sortAlphabetically = false;
 let showDatabase = false;
@@ -171,6 +184,8 @@ let currentRecipeIngredients = [];
 let pendingRecipeId = null;
 let autocompleteIndex = -1;
 let currentTheme = localStorage.getItem('theme') || 'system';
+let pendingSavedList = null;
+let pendingOverwriteIndex = null;
 
 // Apply theme on load
 function applyTheme(theme) {
@@ -208,11 +223,7 @@ const getActiveList = () => lists.find(l => l.id === activeListId) || lists[0];
 
 const getListCategory = () => {
   const list = getActiveList();
-  const baseName = list.name.replace(/ \d+$/, '').toLowerCase();
-  if (baseName === 'grocery') return 'grocery';
-  if (baseName === 'vacation') return 'vacation';
-  if (baseName === 'to-do') return 'todo';
-  return 'grocery';
+  return list.category || 'grocery';
 };
 
 const getThemeColors = () => {
@@ -233,6 +244,7 @@ const saveLists = () => {
   localStorage.setItem('activeListId', JSON.stringify(activeListId));
 };
 const saveRecipes = () => localStorage.setItem('recipes', JSON.stringify(recipes));
+const saveSavedLists = () => localStorage.setItem('savedLists', JSON.stringify(savedLists));
 
 const getUniqueName = (baseName) => {
   const existingNames = lists.map(l => l.name);
@@ -292,6 +304,7 @@ function exportData() {
     lists: lists,
     activeListId: activeListId,
     recipes: recipes,
+    savedLists: savedLists,
     database: groceryItems
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -320,9 +333,11 @@ function importData(event) {
       lists = data.lists || lists;
       activeListId = data.activeListId || lists[0].id;
       recipes = data.recipes || [];
+      savedLists = data.savedLists || [];
       groceryItems = data.database || groceryItems;
       saveLists();
       saveRecipes();
+      saveSavedLists();
       saveDatabase();
       renderTabs();
       renderAll();
@@ -352,7 +367,10 @@ function closeNewListModal() {
 function selectPreset(name) {
   const uniqueName = getUniqueName(name);
   const newId = Math.max(...lists.map(l => l.id), 0) + 1;
-  lists.push({ id: newId, name: uniqueName, items: [], lastList: [] });
+  const category = name.toLowerCase() === 'grocery' ? 'grocery' : 
+                   name.toLowerCase() === 'vacation' ? 'vacation' : 
+                   name.toLowerCase() === 'to-do' ? 'todo' : 'grocery';
+  lists.push({ id: newId, name: uniqueName, category: category, items: [], lastList: [] });
   activeListId = newId;
   saveLists();
   closeNewListModal();
@@ -410,6 +428,151 @@ function confirmDelete() {
     renderAll();
   }
   closeDeleteModal();
+}
+
+// Save List Modal functions
+function openSaveListModal() {
+  const list = getActiveList();
+  if (list.items.length === 0) {
+    alert('Cannot save an empty list.');
+    return;
+  }
+  document.getElementById('saveListNameInput').value = list.name;
+  document.getElementById('saveListModal').classList.remove('hidden');
+  document.getElementById('saveListNameInput').focus();
+}
+
+function closeSaveListModal() {
+  document.getElementById('saveListModal').classList.add('hidden');
+}
+
+function confirmSaveList() {
+  const name = document.getElementById('saveListNameInput').value.trim();
+  if (!name) {
+    alert('Please enter a name for the saved list.');
+    return;
+  }
+  
+  const list = getActiveList();
+  const savedList = {
+    id: Date.now(),
+    name: name,
+    category: list.category,
+    items: JSON.parse(JSON.stringify(list.items)) // Deep copy
+  };
+  
+  // Check if a saved list with this name already exists
+  const existingIndex = savedLists.findIndex(sl => sl.name.toLowerCase() === name.toLowerCase());
+  if (existingIndex >= 0) {
+    // Store pending data and show overwrite confirmation modal
+    pendingSavedList = savedList;
+    pendingOverwriteIndex = existingIndex;
+    document.getElementById('overwriteListName').textContent = name;
+    document.getElementById('overwriteSavedListModal').classList.remove('hidden');
+  } else {
+    savedLists.push(savedList);
+    saveSavedLists();
+    closeSaveListModal();
+  }
+}
+
+function closeOverwriteModal() {
+  document.getElementById('overwriteSavedListModal').classList.add('hidden');
+  pendingSavedList = null;
+  pendingOverwriteIndex = null;
+}
+
+function confirmOverwriteSavedList() {
+  if (pendingSavedList !== null && pendingOverwriteIndex !== null) {
+    savedLists[pendingOverwriteIndex] = pendingSavedList;
+    saveSavedLists();
+  }
+  closeOverwriteModal();
+  closeSaveListModal();
+}
+
+// Saved Lists Modal functions
+function openSavedListsModal() {
+  closeNewListModal();
+  renderSavedLists();
+  document.getElementById('savedListsModal').classList.remove('hidden');
+}
+
+function closeSavedListsModal() {
+  document.getElementById('savedListsModal').classList.add('hidden');
+}
+
+function renderSavedLists() {
+  const container = document.getElementById('savedListsContainer');
+  
+  if (savedLists.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; font-size: 14px; text-align: center; padding: 20px;">No saved lists yet</p>';
+    return;
+  }
+  
+  container.innerHTML = savedLists.map(sl => {
+    const categoryLabel = sl.category === 'grocery' ? 'Grocery' : 
+                          sl.category === 'vacation' ? 'Vacation' : 'To-Do';
+    const tagClass = sl.category === 'grocery' ? 'db-tag-grocery' : 
+                     sl.category === 'vacation' ? 'db-tag-vacation' : 'db-tag-todo';
+    return `
+      <div class="db-item">
+        <span class="db-item-name" style="cursor: pointer;" onclick="loadSavedList(${sl.id})">${sl.name}</span>
+        <span class="db-tag ${tagClass}">${categoryLabel}</span>
+        <button class="list-item-remove" onclick="event.stopPropagation(); openDeleteSavedListModal(${sl.id})">&#x2715;</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function loadSavedList(id) {
+  const savedList = savedLists.find(sl => sl.id === id);
+  if (!savedList) return;
+  
+  if (lists.length >= 10) {
+    alert('Maximum of 10 lists reached. Please delete a list first.');
+    return;
+  }
+  
+  const uniqueName = getUniqueName(savedList.name);
+  const newId = Math.max(...lists.map(l => l.id), 0) + 1;
+  const newList = {
+    id: newId,
+    name: uniqueName,
+    category: savedList.category,
+    items: JSON.parse(JSON.stringify(savedList.items)), // Deep copy
+    lastList: []
+  };
+  
+  lists.push(newList);
+  activeListId = newId;
+  saveLists();
+  
+  closeSavedListsModal();
+  suggestions = getRandomItems();
+  renderTabs();
+  renderAll();
+}
+
+let pendingDeleteSavedListId = null;
+
+function openDeleteSavedListModal(id) {
+  pendingDeleteSavedListId = id;
+  document.getElementById('deleteSavedListModal').classList.remove('hidden');
+}
+
+function closeDeleteSavedListModal() {
+  document.getElementById('deleteSavedListModal').classList.add('hidden');
+  pendingDeleteSavedListId = null;
+}
+
+function confirmDeleteSavedList() {
+  if (pendingDeleteSavedListId !== null) {
+    savedLists = savedLists.filter(sl => sl.id !== pendingDeleteSavedListId);
+    saveSavedLists();
+    renderSavedLists();
+  }
+  closeDeleteSavedListModal();
 }
 
 function openCategoryModal(itemName, fromDatabase = false) {
@@ -493,7 +656,7 @@ function renderRecipeIngredients() {
     <div class="recipe-ingredient-item">
       <span class="recipe-ingredient-qty">${ing.qty || '-'}</span>
       <span class="recipe-ingredient-name">${ing.name}</span>
-      <button class="list-item-remove" onclick="removeRecipeIngredient(${index})">✕</button>
+      <button class="list-item-remove" onclick="removeRecipeIngredient(${index})">&#x2715;</button>
     </div>
   `).join('');
 }
@@ -667,7 +830,7 @@ function addRecipeToList(listId) {
   document.getElementById('recipesView').classList.add('hidden');
   document.getElementById('mainView').classList.remove('hidden');
   document.getElementById('tabsContainer').classList.remove('hidden');
-  document.getElementById('toggleRecipesBtn').textContent = '📖 Recipes';
+  document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
   saveLists();
   renderTabs();
   renderAll();
@@ -681,7 +844,8 @@ function addRecipeToNewList() {
   const newId = Math.max(...lists.map(l => l.id), 0) + 1;
   const newList = { 
     id: newId, 
-    name: uniqueName, 
+    name: uniqueName,
+    category: 'grocery',
     items: recipe.ingredients.map(ing => ({ name: ing.name, qty: ing.qty || '' })),
     lastList: [] 
   };
@@ -695,7 +859,7 @@ function addRecipeToNewList() {
   document.getElementById('recipesView').classList.add('hidden');
   document.getElementById('mainView').classList.remove('hidden');
   document.getElementById('tabsContainer').classList.remove('hidden');
-  document.getElementById('toggleRecipesBtn').textContent = '📖 Recipes';
+  document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
   renderTabs();
   renderAll();
 }
@@ -829,7 +993,7 @@ function renderPresetList() {
 function renderTabs() {
   const container = document.getElementById('tabsContainer');
   const tabs = lists.map(list => {
-    const closeBtn = lists.length > 1 ? `<button class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">✕</button>` : '';
+    const closeBtn = lists.length > 1 ? `<button class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">&#x2715;</button>` : '';
     return `<div class="tab ${list.id === activeListId ? 'tab-active' : ''}" onclick="handleTabTap(${list.id})" data-id="${list.id}"><span class="tab-name">${list.name}</span>${closeBtn}</div>`;
   }).join('');
   const addTab = lists.length < 10 ? `<button class="tab tab-add" onclick="openNewListModal()">+</button>` : '';
@@ -890,25 +1054,8 @@ function renderItemChips() {
     const isSelected = list.items.some(i => i.name === item || i === item);
     const isFirst = query.trim() && index === 0;
     const chipClass = isSelected ? `chip ${theme.chip}` : (isFirst ? `chip ${theme.highlight}` : 'chip chip-default');
-    const badge = isFirst ? `<span class="${theme.badge}">↵</span>` : '';
+    const badge = isFirst ? `<span class="${theme.badge}">Ã¢â€ Âµ</span>` : '';
     return `<div class="chip-badge">${badge}<button class="${chipClass}" onclick="toggleItem('${item.replace(/'/g, "\\'")}')">${item}</button></div>`;
-  }).join('');
-}
-
-function renderLastList() {
-  const card = document.getElementById('lastListCard');
-  const container = document.getElementById('lastListChips');
-  const list = getActiveList();
-  const theme = getThemeColors();
-  
-  if (list.lastList.length === 0) { card.classList.add('hidden'); return; }
-  
-  card.classList.remove('hidden');
-  container.innerHTML = list.lastList.map(item => {
-    const itemName = typeof item === 'string' ? item : item.name;
-    const isSelected = list.items.some(i => (typeof i === 'string' ? i : i.name) === itemName);
-    const chipClass = isSelected ? `chip ${theme.chip}` : 'chip chip-default';
-    return `<button class="${chipClass}" onclick="addFromLastList('${itemName.replace(/'/g, "\\'")}')">${itemName}</button>`;
   }).join('');
 }
 
@@ -953,7 +1100,7 @@ function renderShoppingList() {
       <span class="${theme.listNumber}">${index + 1}</span>
       <span class="list-item-text">${itemName}</span>
       ${qtyField}
-      <button class="list-item-remove" onclick="removeItem(${originalIndex})">✕</button>
+      <button class="list-item-remove" onclick="removeItem(${originalIndex})">&#x2715;</button>
     </div>
   `}).join('');
 }
@@ -991,7 +1138,7 @@ function renderDatabase() {
     <div class="db-item">
       <span class="db-item-name">${item.name}</span>
       <span class="db-tag ${tagClass}">${tagText}</span>
-      <button class="list-item-remove" onclick="removeFromDatabase('${item.name.replace(/'/g, "\\'")}')">✕</button>
+      <button class="list-item-remove" onclick="removeFromDatabase('${item.name.replace(/'/g, "\\'")}')">&#x2715;</button>
     </div>
   `}).join('');
 }
@@ -1005,7 +1152,7 @@ function renderAll() {
 function updateSortButton() {
   const sortBtn = document.getElementById('sortBtn');
   sortBtn.className = `btn btn-small ${sortAlphabetically ? 'btn-purple' : 'btn-secondary'}`;
-  sortBtn.textContent = sortAlphabetically ? '✓ A-Z' : 'A-Z';
+  sortBtn.textContent = sortAlphabetically ? 'A-Z' : 'A-Z';
 }
 
 // Action functions
@@ -1091,8 +1238,8 @@ document.getElementById('toggleDbBtn').addEventListener('click', () => {
   document.getElementById('recipesView').classList.add('hidden');
   document.getElementById('mainView').classList.toggle('hidden', showDatabase);
   document.getElementById('tabsContainer').classList.toggle('hidden', showDatabase);
-  document.getElementById('toggleDbBtn').textContent = showDatabase ? '← Back to List' : '📦 Database';
-  document.getElementById('toggleRecipesBtn').textContent = '📖 Recipes';
+  document.getElementById('toggleDbBtn').textContent = showDatabase ? 'Back to List' : 'Database';
+  document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
   if (showDatabase) renderDatabase();
 });
 
@@ -1103,8 +1250,8 @@ document.getElementById('toggleRecipesBtn').addEventListener('click', () => {
   document.getElementById('databaseView').classList.add('hidden');
   document.getElementById('mainView').classList.toggle('hidden', showRecipes);
   document.getElementById('tabsContainer').classList.toggle('hidden', showRecipes);
-  document.getElementById('toggleRecipesBtn').textContent = showRecipes ? '← Back to List' : '📖 Recipes';
-  document.getElementById('toggleDbBtn').textContent = '📦 Database';
+  document.getElementById('toggleRecipesBtn').textContent = showRecipes ? 'Back to List' : 'Recipes';
+  document.getElementById('toggleDbBtn').textContent = 'Database';
   if (showRecipes) renderRecipeList();
 });
 
@@ -1244,6 +1391,30 @@ document.getElementById('dbFilterAll').addEventListener('click', () => setDbFilt
 document.getElementById('dbFilterGrocery').addEventListener('click', () => setDbFilter('grocery'));
 document.getElementById('dbFilterVacation').addEventListener('click', () => setDbFilter('vacation'));
 document.getElementById('dbFilterTodo').addEventListener('click', () => setDbFilter('todo'));
+
+// Save List
+document.getElementById('saveListBtn').addEventListener('click', openSaveListModal);
+document.getElementById('saveListModal').addEventListener('click', closeSaveListModal);
+document.getElementById('closeSaveListModalBtn').addEventListener('click', closeSaveListModal);
+document.getElementById('confirmSaveListBtn').addEventListener('click', confirmSaveList);
+document.getElementById('saveListNameInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') confirmSaveList();
+});
+
+// Overwrite Saved List
+document.getElementById('overwriteSavedListModal').addEventListener('click', closeOverwriteModal);
+document.getElementById('cancelOverwriteBtn').addEventListener('click', closeOverwriteModal);
+document.getElementById('confirmOverwriteBtn').addEventListener('click', confirmOverwriteSavedList);
+
+// Saved Lists
+document.getElementById('openSavedListsBtn').addEventListener('click', openSavedListsModal);
+document.getElementById('savedListsModal').addEventListener('click', closeSavedListsModal);
+document.getElementById('closeSavedListsModalBtn').addEventListener('click', closeSavedListsModal);
+
+// Delete Saved List
+document.getElementById('deleteSavedListModal').addEventListener('click', closeDeleteSavedListModal);
+document.getElementById('closeDeleteSavedListModalBtn').addEventListener('click', closeDeleteSavedListModal);
+document.getElementById('confirmDeleteSavedListBtn').addEventListener('click', confirmDeleteSavedList);
 
 // Initial render
 renderTabs();
