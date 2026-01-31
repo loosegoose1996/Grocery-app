@@ -9,11 +9,11 @@
   <meta name="theme-color" content="#059669">
   <title>Grocery List</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23059669' width='100' height='100' rx='20'/><text y='70' x='50' text-anchor='middle' font-size='60'>🛒</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23059669' width='100' height='100' rx='20'/><text y='70' x='50' text-anchor='middle' font-size='60'>ðŸ›’</text></svg>">
 </head>
 <body>
   <div class="container">
-    <h1>🛒 Grocery List</h1>
+    <h1>Grocery List</h1>
     
     <div class="top-btn-container">
       <button class="btn btn-indigo" id="toggleDbBtn">Database</button>
@@ -28,6 +28,7 @@
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Choose a list name</div>
         <div class="preset-list" id="presetList"></div>
+        <button class="btn btn-secondary btn-full mb-12" id="openSavedListsBtn">Add Saved List</button>
         <div class="modal-buttons">
           <button class="btn btn-secondary" id="closeNewListModalBtn">Cancel</button>
         </div>
@@ -75,6 +76,54 @@
       </div>
     </div>
 
+    <!-- Save List Modal -->
+    <div class="modal-overlay hidden" id="saveListModal">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Save List</div>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">Enter a name for this saved list:</p>
+        <input type="text" class="input mb-12" id="saveListNameInput" placeholder="List name...">
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="closeSaveListModalBtn">Cancel</button>
+          <button class="btn btn-primary" id="confirmSaveListBtn">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overwrite Saved List Confirm Modal -->
+    <div class="modal-overlay hidden" id="overwriteSavedListModal">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Replace Saved List?</div>
+        <p style="color: #6b7280; font-size: 14px;">A saved list named "<span id="overwriteListName"></span>" already exists. Do you want to replace it?</p>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="cancelOverwriteBtn">Cancel</button>
+          <button class="btn btn-danger" id="confirmOverwriteBtn">Replace</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved Lists Modal -->
+    <div class="modal-overlay hidden" id="savedListsModal">
+      <div class="modal modal-large" onclick="event.stopPropagation()">
+        <div class="modal-title">Saved Lists</div>
+        <div id="savedListsContainer" class="list-container mb-12"></div>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="closeSavedListsModalBtn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Saved List Confirm Modal -->
+    <div class="modal-overlay hidden" id="deleteSavedListModal">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-title">Delete Saved List?</div>
+        <p style="color: #6b7280; font-size: 14px;">This cannot be undone.</p>
+        <div class="modal-buttons">
+          <button class="btn btn-secondary" id="closeDeleteSavedListModalBtn">Cancel</button>
+          <button class="btn btn-danger" id="confirmDeleteSavedListBtn" onclick="event.stopPropagation()">Delete</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Settings Modal -->
     <div class="modal-overlay hidden" id="importExportModal">
       <div class="modal" onclick="event.stopPropagation()">
@@ -83,17 +132,17 @@
         <div class="settings-section">
           <div class="settings-label">Theme</div>
           <div class="theme-toggle-container">
-            <button class="theme-btn" id="themeLightBtn">☀️ Light</button>
-            <button class="theme-btn" id="themeDarkBtn">🌙 Dark</button>
-            <button class="theme-btn" id="themeSystemBtn">⚙️ System</button>
+            <button class="theme-btn" id="themeLightBtn">Light</button>
+            <button class="theme-btn" id="themeDarkBtn">Dark</button>
+            <button class="theme-btn" id="themeSystemBtn">System</button>
           </div>
         </div>
         
         <div class="settings-section">
           <div class="settings-label">Data</div>
-          <button class="btn btn-primary btn-full mb-12" id="exportDataBtn">📤 Export Data</button>
+          <button class="btn btn-primary btn-full mb-12" id="exportDataBtn">Export Data</button>
           <label class="btn btn-secondary btn-full" style="display: block; text-align: center; cursor: pointer;">
-            📥 Import Data
+            Import Data
             <input type="file" accept=".json" id="importFileInput" style="display: none;">
           </label>
         </div>
@@ -228,23 +277,16 @@
       <div class="card">
         <div class="card-header">
           <span class="card-title">Items</span>
-          <button class="link-btn" id="refreshBtn">↻ Refresh</button>
+          <button class="link-btn" id="refreshBtn">â†» Refresh</button>
         </div>
         <input type="text" class="input mb-12" id="searchInput" placeholder="Search items...">
         <div class="chips" id="itemChips"></div>
       </div>
-
-      <div id="lastListCard" class="card hidden">
-        <div class="card-header">
-          <span class="card-title">Last List</span>
-        </div>
-        <div class="chips" id="lastListChips"></div>
-      </div>
-
       <div class="card">
         <div class="card-header">
           <span class="card-title"><span id="listTitle">Shopping List</span> (<span id="listCount">0</span>)</span>
           <div class="btn-group">
+            <button class="btn btn-small btn-primary" id="saveListBtn">Save</button>
             <button class="btn btn-small btn-secondary" id="sortBtn">A-Z</button>
             <button class="btn btn-small btn-teal" id="newListBtn">Clear</button>
           </div>
