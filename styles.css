@@ -430,6 +430,67 @@ h1 { text-align: center; color: #065f46; font-size: 24px; margin-bottom: 16px; }
 
 .tab-add:active { background: #059669; }
 
+.tab-add-vacation {
+  background: #ef4444;
+  color: white;
+  font-size: 16px;
+  padding: 8px 14px;
+}
+
+.tab-add-vacation:active { background: #dc2626; }
+
+.tab-add-todo {
+  background: #3b82f6;
+  color: white;
+  font-size: 16px;
+  padding: 8px 14px;
+}
+
+.tab-add-todo:active { background: #2563eb; }
+
+/* Themed active tabs */
+.tab-active { 
+  background: var(--card-bg); 
+  color: #065f46; 
+  box-shadow: 0 -2px 8px var(--shadow); 
+}
+
+.tab-active-vacation {
+  background: var(--card-bg);
+  color: #dc2626;
+  box-shadow: 0 -2px 8px var(--shadow);
+}
+
+.tab-active-todo {
+  background: var(--card-bg);
+  color: #2563eb;
+  box-shadow: 0 -2px 8px var(--shadow);
+}
+
+[data-theme="dark"] .tab-active { color: #6ee7b7; }
+[data-theme="dark"] .tab-active-vacation { color: #fca5a5; }
+[data-theme="dark"] .tab-active-todo { color: #93c5fd; }
+
+/* Themed Save button */
+.btn-save-grocery { background: #10b981; color: white; }
+.btn-save-grocery:active { background: #059669; }
+
+.btn-save-vacation { background: #ef4444; color: white; }
+.btn-save-vacation:active { background: #dc2626; }
+
+.btn-save-todo { background: #3b82f6; color: white; }
+.btn-save-todo:active { background: #2563eb; }
+
+/* Themed Clear button */
+.btn-clear-grocery { background: #14b8a6; color: white; }
+.btn-clear-grocery:active { background: #0d9488; }
+
+.btn-clear-vacation { background: #f87171; color: white; }
+.btn-clear-vacation:active { background: #ef4444; }
+
+.btn-clear-todo { background: #60a5fa; color: white; }
+.btn-clear-todo:active { background: #3b82f6; }
+
 /* Modal */
 .modal-overlay { 
   position: fixed; 
@@ -484,6 +545,16 @@ h1 { text-align: center; color: #065f46; font-size: 24px; margin-bottom: 16px; }
 }
 
 .preset-btn:active { background: var(--chip-default-bg); }
+
+.preset-btn-saved {
+  background: #10b981;
+  color: white;
+  border: none;
+}
+
+.preset-btn-saved:active { 
+  background: #059669; 
+}
 
 /* Recipe Styles */
 .recipe-ingredients-list { 
@@ -660,4 +731,194 @@ h1 { text-align: center; color: #065f46; font-size: 24px; margin-bottom: 16px; }
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 8px;
+}
+
+/* Database View Toggle */
+.db-view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--chip-default-bg);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.toggle-btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.toggle-btn.active {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.toggle-btn:active {
+  transform: scale(0.98);
+}
+
+/* Saved List Card (Expandable) */
+.saved-list-card {
+  background: var(--db-item-bg);
+  border-radius: 12px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.saved-list-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.saved-list-header:active {
+  background: var(--chip-default-bg);
+}
+
+.saved-list-expand {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.saved-list-expand.expanded {
+  transform: rotate(90deg);
+}
+
+.saved-list-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.saved-list-count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.saved-list-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.saved-list-action-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.saved-list-action-btn:active {
+  background: var(--chip-default-bg);
+}
+
+.saved-list-action-btn.load-btn {
+  color: #10b981;
+}
+
+.saved-list-action-btn.delete-btn:active {
+  color: #ef4444;
+}
+
+.saved-list-items {
+  padding: 0 12px 12px 12px;
+  display: none;
+}
+
+.saved-list-items.expanded {
+  display: block;
+}
+
+.saved-list-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.saved-list-item-qty {
+  color: var(--text-secondary);
+  min-width: 60px;
+}
+
+.saved-list-item-name {
+  flex: 1;
+  color: var(--text-primary);
+}
+
+.saved-list-item-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.saved-list-item-remove:active {
+  color: #ef4444;
+}
+
+.saved-list-add-item {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.saved-list-add-item .input {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.saved-list-add-item .btn {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.saved-list-add-item .autocomplete-container {
+  position: relative;
+}
+
+.saved-list-add-item .autocomplete-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.saved-list-items {
+  overflow: visible;
+}
+
+.saved-list-card {
+  overflow: visible;
 }
