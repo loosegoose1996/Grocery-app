@@ -28,7 +28,7 @@
       <div class="modal" onclick="event.stopPropagation()">
         <div class="modal-title">Choose a list name</div>
         <div class="preset-list" id="presetList"></div>
-        <button class="btn btn-secondary btn-full mb-12" id="openSavedListsBtn">Add Saved List</button>
+        <button class="preset-btn preset-btn-saved mb-12" id="openSavedListsBtn">Add Saved List</button>
         <div class="modal-buttons">
           <button class="btn btn-secondary" id="closeNewListModalBtn">Cancel</button>
         </div>
@@ -255,20 +255,40 @@
     <div id="databaseView" class="hidden">
       <div class="card">
         <div class="card-header">
-          <span class="card-title">Database (<span id="dbCount">0</span> items)</span>
+          <div class="db-view-toggle">
+            <button class="toggle-btn active" id="dbViewItemsBtn">Items</button>
+            <button class="toggle-btn" id="dbViewSavedBtn">Saved</button>
+          </div>
+          <span class="card-title" id="dbTitle">Database Items (<span id="dbCount">0</span>)</span>
         </div>
-        <input type="text" class="input mb-12" id="dbSearch" placeholder="Search database...">
-        <div class="filter-row mb-12">
-          <button class="btn btn-small btn-primary" id="dbFilterAll">All</button>
-          <button class="btn btn-small btn-secondary" id="dbFilterGrocery">Grocery</button>
-          <button class="btn btn-small btn-secondary" id="dbFilterVacation">Vacation</button>
-          <button class="btn btn-small btn-secondary" id="dbFilterTodo">To-Do</button>
+        
+        <!-- Items Sub-View -->
+        <div id="dbItemsView">
+          <input type="text" class="input mb-12" id="dbSearch" placeholder="Search database...">
+          <div class="filter-row mb-12">
+            <button class="btn btn-small btn-primary" id="dbFilterAll">All</button>
+            <button class="btn btn-small btn-secondary" id="dbFilterGrocery">Grocery</button>
+            <button class="btn btn-small btn-secondary" id="dbFilterVacation">Vacation</button>
+            <button class="btn btn-small btn-secondary" id="dbFilterTodo">To-Do</button>
+          </div>
+          <div class="input-row">
+            <input type="text" class="input" id="newDbItem" placeholder="Add new item...">
+            <button class="btn btn-indigo" id="addDbItemBtn">Add</button>
+          </div>
+          <div class="list-container" id="dbList"></div>
         </div>
-        <div class="input-row">
-          <input type="text" class="input" id="newDbItem" placeholder="Add new item...">
-          <button class="btn btn-indigo" id="addDbItemBtn">Add</button>
+        
+        <!-- Saved Lists Sub-View -->
+        <div id="dbSavedView" class="hidden">
+          <input type="text" class="input mb-12" id="savedListSearch" placeholder="Search saved lists...">
+          <div class="filter-row mb-12">
+            <button class="btn btn-small btn-primary" id="savedFilterAll">All</button>
+            <button class="btn btn-small btn-secondary" id="savedFilterGrocery">Grocery</button>
+            <button class="btn btn-small btn-secondary" id="savedFilterVacation">Vacation</button>
+            <button class="btn btn-small btn-secondary" id="savedFilterTodo">To-Do</button>
+          </div>
+          <div class="list-container" id="savedListsDbContainer"></div>
         </div>
-        <div class="list-container" id="dbList"></div>
       </div>
     </div>
 
@@ -277,7 +297,7 @@
       <div class="card">
         <div class="card-header">
           <span class="card-title">Items</span>
-          <button class="link-btn" id="refreshBtn">â†» Refresh</button>
+          <button class="link-btn" id="refreshBtn">Refresh</button>
         </div>
         <input type="text" class="input mb-12" id="searchInput" placeholder="Search items...">
         <div class="chips" id="itemChips"></div>
@@ -286,9 +306,9 @@
         <div class="card-header">
           <span class="card-title"><span id="listTitle">Shopping List</span> (<span id="listCount">0</span>)</span>
           <div class="btn-group">
-            <button class="btn btn-small btn-primary" id="saveListBtn">Save</button>
+            <button class="btn btn-small btn-save-grocery" id="saveListBtn">Save</button>
             <button class="btn btn-small btn-secondary" id="sortBtn">A-Z</button>
-            <button class="btn btn-small btn-teal" id="newListBtn">Clear</button>
+            <button class="btn btn-small btn-clear-grocery" id="newListBtn">Clear</button>
           </div>
         </div>
         <div id="shoppingListEmpty" class="list-empty">Tap items above to add them to your list</div>
