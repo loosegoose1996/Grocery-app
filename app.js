@@ -186,6 +186,9 @@ let autocompleteIndex = -1;
 let currentTheme = localStorage.getItem('theme') || 'system';
 let pendingSavedList = null;
 let pendingOverwriteIndex = null;
+let dbViewMode = 'items'; // 'items' or 'saved'
+let savedListCategoryFilter = 'all';
+let expandedSavedListId = null;
 
 // Apply theme on load
 function applyTheme(theme) {
@@ -391,6 +394,7 @@ function closeRenameModal() {
 
 function confirmRename() {
   const input = document.getElementById('renameInput').value.trim();
+  document.getElementById('renameModal').classList.add('hidden');
   if (input) {
     const list = getActiveList();
     const otherNames = lists.filter(l => l.id !== list.id).map(l => l.name);
@@ -406,7 +410,6 @@ function confirmRename() {
     renderTabs();
     renderAll();
   }
-  closeRenameModal();
 }
 
 function openDeleteModal() {
@@ -419,6 +422,7 @@ function closeDeleteModal() {
 }
 
 function confirmDelete() {
+  document.getElementById('deleteModal').classList.add('hidden');
   if (lists.length > 1) {
     lists = lists.filter(l => l.id !== activeListId);
     activeListId = lists[0].id;
@@ -427,7 +431,6 @@ function confirmDelete() {
     renderTabs();
     renderAll();
   }
-  closeDeleteModal();
 }
 
 // Save List Modal functions
@@ -548,7 +551,18 @@ function loadSavedList(id) {
   activeListId = newId;
   saveLists();
   
+  // Close modal if open
   closeSavedListsModal();
+  
+  // If called from database view, switch back to main view
+  if (showDatabase) {
+    showDatabase = false;
+    document.getElementById('databaseView').classList.add('hidden');
+    document.getElementById('mainView').classList.remove('hidden');
+    document.getElementById('tabsContainer').classList.remove('hidden');
+    document.getElementById('toggleDbBtn').textContent = 'Database';
+  }
+  
   suggestions = getRandomItems();
   renderTabs();
   renderAll();
@@ -571,6 +585,9 @@ function confirmDeleteSavedList() {
     savedLists = savedLists.filter(sl => sl.id !== pendingDeleteSavedListId);
     saveSavedLists();
     renderSavedLists();
+    if (dbViewMode === 'saved') {
+      renderSavedListsDb();
+    }
   }
   closeDeleteSavedListModal();
 }
@@ -992,12 +1009,36 @@ function renderPresetList() {
 
 function renderTabs() {
   const container = document.getElementById('tabsContainer');
+  const activeList = getActiveList();
+  const activeCategory = activeList ? activeList.category : 'grocery';
+  
   const tabs = lists.map(list => {
     const closeBtn = lists.length > 1 ? `<button class="tab-close" onclick="event.stopPropagation(); deleteList(${list.id})">&#x2715;</button>` : '';
-    return `<div class="tab ${list.id === activeListId ? 'tab-active' : ''}" onclick="handleTabTap(${list.id})" data-id="${list.id}"><span class="tab-name">${list.name}</span>${closeBtn}</div>`;
+    let tabClass = 'tab';
+    if (list.id === activeListId) {
+      if (list.category === 'vacation') {
+        tabClass = 'tab tab-active-vacation';
+      } else if (list.category === 'todo') {
+        tabClass = 'tab tab-active-todo';
+      } else {
+        tabClass = 'tab tab-active';
+      }
+    }
+    return `<div class="${tabClass}" onclick="handleTabTap(${list.id})" data-id="${list.id}"><span class="tab-name">${list.name}</span>${closeBtn}</div>`;
   }).join('');
-  const addTab = lists.length < 10 ? `<button class="tab tab-add" onclick="openNewListModal()">+</button>` : '';
+  
+  let addTabClass = 'tab tab-add';
+  if (activeCategory === 'vacation') {
+    addTabClass = 'tab tab-add-vacation';
+  } else if (activeCategory === 'todo') {
+    addTabClass = 'tab tab-add-todo';
+  }
+  
+  const addTab = lists.length < 10 ? `<button class="${addTabClass}" onclick="openNewListModal()">+</button>` : '';
   container.innerHTML = tabs + addTab;
+  
+  // Update Save and Clear buttons
+  updateActionButtons();
 }
 
 function handleTabTap(id) {
@@ -1054,7 +1095,7 @@ function renderItemChips() {
     const isSelected = list.items.some(i => i.name === item || i === item);
     const isFirst = query.trim() && index === 0;
     const chipClass = isSelected ? `chip ${theme.chip}` : (isFirst ? `chip ${theme.highlight}` : 'chip chip-default');
-    const badge = isFirst ? `<span class="${theme.badge}">Ã¢â€ Âµ</span>` : '';
+    const badge = isFirst ? `<span class="${theme.badge}">&#x21A9;</span>` : '';
     return `<div class="chip-badge">${badge}<button class="${chipClass}" onclick="toggleItem('${item.replace(/'/g, "\\'")}')">${item}</button></div>`;
   }).join('');
 }
@@ -1118,9 +1159,222 @@ function updateDbFilterButtons() {
   document.getElementById('dbFilterTodo').className = `btn btn-small ${dbCategoryFilter === 'todo' ? 'btn-primary' : 'btn-secondary'}`;
 }
 
+// Saved Lists in Database View
+function setDbViewMode(mode) {
+  dbViewMode = mode;
+  document.getElementById('dbViewItemsBtn').classList.toggle('active', mode === 'items');
+  document.getElementById('dbViewSavedBtn').classList.toggle('active', mode === 'saved');
+  document.getElementById('dbItemsView').classList.toggle('hidden', mode !== 'items');
+  document.getElementById('dbSavedView').classList.toggle('hidden', mode !== 'saved');
+  
+  if (mode === 'items') {
+    renderDatabase();
+  } else {
+    renderSavedListsDb();
+  }
+}
+
+function setSavedListFilter(filter) {
+  savedListCategoryFilter = filter;
+  updateSavedListFilterButtons();
+  renderSavedListsDb();
+}
+
+function updateSavedListFilterButtons() {
+  document.getElementById('savedFilterAll').className = `btn btn-small ${savedListCategoryFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('savedFilterGrocery').className = `btn btn-small ${savedListCategoryFilter === 'grocery' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('savedFilterVacation').className = `btn btn-small ${savedListCategoryFilter === 'vacation' ? 'btn-primary' : 'btn-secondary'}`;
+  document.getElementById('savedFilterTodo').className = `btn btn-small ${savedListCategoryFilter === 'todo' ? 'btn-primary' : 'btn-secondary'}`;
+}
+
+function renderSavedListsDb() {
+  const container = document.getElementById('savedListsDbContainer');
+  const searchInput = document.getElementById('savedListSearch');
+  const query = searchInput.value.toLowerCase();
+  
+  let filtered = savedLists;
+  if (savedListCategoryFilter !== 'all') filtered = filtered.filter(sl => sl.category === savedListCategoryFilter);
+  if (query) filtered = filtered.filter(sl => sl.name.toLowerCase().includes(query));
+  filtered = filtered.sort((a, b) => a.name.localeCompare(b.name));
+  
+  document.getElementById('dbTitle').innerHTML = `Saved Lists (<span id="savedCount">${filtered.length}</span>)`;
+  
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; font-size: 14px; text-align: center; padding: 20px;">No saved lists found</p>';
+    return;
+  }
+  
+  container.innerHTML = filtered.map(sl => {
+    const isExpanded = expandedSavedListId === sl.id;
+    const tagClass = sl.category === 'grocery' ? 'db-tag-grocery' : 
+                     sl.category === 'vacation' ? 'db-tag-vacation' : 'db-tag-todo';
+    const tagText = sl.category === 'grocery' ? 'Grocery' : 
+                    sl.category === 'vacation' ? 'Vacation' : 'To-Do';
+    
+    const itemsHtml = sl.items.map((item, idx) => {
+      const itemName = typeof item === 'string' ? item : item.name;
+      const itemQty = typeof item === 'string' ? '' : (item.qty || '');
+      return `
+        <div class="saved-list-item">
+          <span class="saved-list-item-qty">${itemQty || '-'}</span>
+          <span class="saved-list-item-name">${itemName}</span>
+          <button class="saved-list-item-remove" onclick="event.stopPropagation(); removeItemFromSavedList(${sl.id}, ${idx})">&#x2715;</button>
+        </div>
+      `;
+    }).join('');
+    
+    return `
+      <div class="saved-list-card">
+        <div class="saved-list-header" onclick="toggleSavedListExpand(${sl.id})">
+          <span class="saved-list-expand ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="saved-list-name">${sl.name}</span>
+          <span class="db-tag ${tagClass}">${tagText}</span>
+          <span class="saved-list-count">${sl.items.length} items</span>
+          <div class="saved-list-actions">
+            <button class="saved-list-action-btn load-btn" onclick="event.stopPropagation(); loadSavedList(${sl.id})" title="Load list">↗</button>
+            <button class="saved-list-action-btn delete-btn" onclick="event.stopPropagation(); openDeleteSavedListModal(${sl.id})" title="Delete">&#x2715;</button>
+          </div>
+        </div>
+        <div class="saved-list-items ${isExpanded ? 'expanded' : ''}">
+          ${itemsHtml || '<p style="color: #9ca3af; font-size: 13px; padding: 8px;">No items in this list</p>'}
+          <div class="saved-list-add-item">
+            <div class="autocomplete-container" style="flex: 1;">
+              <input type="text" class="input" id="addItemToSaved_${sl.id}" placeholder="Add item..." 
+                oninput="showSavedListAutocomplete(${sl.id})"
+                onkeydown="handleSavedListAddItem(event, ${sl.id})"
+                onblur="hideSavedListAutocomplete(${sl.id})"
+                autocomplete="off">
+              <div class="autocomplete-list hidden" id="savedListAutocomplete_${sl.id}"></div>
+            </div>
+            <button class="btn btn-primary" onclick="addItemToSavedList(${sl.id})">+</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleSavedListExpand(id) {
+  if (expandedSavedListId === id) {
+    expandedSavedListId = null;
+  } else {
+    expandedSavedListId = id;
+  }
+  renderSavedListsDb();
+}
+
+function removeItemFromSavedList(listId, itemIndex) {
+  const savedList = savedLists.find(sl => sl.id === listId);
+  if (savedList && savedList.items[itemIndex] !== undefined) {
+    savedList.items.splice(itemIndex, 1);
+    saveSavedLists();
+    renderSavedListsDb();
+  }
+}
+
+function addItemToSavedList(listId) {
+  const input = document.getElementById(`addItemToSaved_${listId}`);
+  const itemName = input.value.trim();
+  if (!itemName) return;
+  
+  const savedList = savedLists.find(sl => sl.id === listId);
+  if (savedList) {
+    savedList.items.push({ name: itemName, qty: '' });
+    saveSavedLists();
+    input.value = '';
+    renderSavedListsDb();
+  }
+}
+
+function handleSavedListAddItem(event, listId) {
+  const list = document.getElementById(`savedListAutocomplete_${listId}`);
+  const items = list.querySelectorAll('.autocomplete-item');
+  
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (!list.classList.contains('hidden') && items.length > 0) {
+      savedListAutocompleteIndex = Math.min(savedListAutocompleteIndex + 1, items.length - 1);
+      updateSavedListAutocompleteSelection(listId);
+    }
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    if (!list.classList.contains('hidden') && items.length > 0) {
+      savedListAutocompleteIndex = Math.max(savedListAutocompleteIndex - 1, 0);
+      updateSavedListAutocompleteSelection(listId);
+    }
+  } else if (event.key === 'Enter') {
+    event.preventDefault();
+    if (!list.classList.contains('hidden') && savedListAutocompleteIndex >= 0 && items[savedListAutocompleteIndex]) {
+      selectSavedListAutocomplete(listId, items[savedListAutocompleteIndex].textContent);
+    }
+    addItemToSavedList(listId);
+  } else if (event.key === 'Escape') {
+    list.classList.add('hidden');
+    savedListAutocompleteIndex = -1;
+  }
+}
+
+let savedListAutocompleteIndex = -1;
+
+function showSavedListAutocomplete(listId) {
+  const input = document.getElementById(`addItemToSaved_${listId}`);
+  const list = document.getElementById(`savedListAutocomplete_${listId}`);
+  const query = input.value.trim().toLowerCase();
+  
+  // Get the saved list to filter by its category
+  const savedList = savedLists.find(sl => sl.id === listId);
+  const category = savedList ? savedList.category : 'grocery';
+  
+  if (!query) {
+    list.classList.add('hidden');
+    return;
+  }
+  
+  const matches = groceryItems
+    .filter(i => i.category === category && i.name.toLowerCase().includes(query))
+    .slice(0, 8);
+  
+  if (matches.length === 0) {
+    list.classList.add('hidden');
+    return;
+  }
+  
+  savedListAutocompleteIndex = -1;
+  list.innerHTML = matches.map((item, i) => 
+    `<div class="autocomplete-item" data-index="${i}" onmousedown="selectSavedListAutocomplete(${listId}, '${item.name.replace(/'/g, "\\'")}')">${item.name}</div>`
+  ).join('');
+  list.classList.remove('hidden');
+}
+
+function selectSavedListAutocomplete(listId, name) {
+  const input = document.getElementById(`addItemToSaved_${listId}`);
+  const list = document.getElementById(`savedListAutocomplete_${listId}`);
+  input.value = name;
+  list.classList.add('hidden');
+  savedListAutocompleteIndex = -1;
+}
+
+function hideSavedListAutocomplete(listId) {
+  setTimeout(() => {
+    const list = document.getElementById(`savedListAutocomplete_${listId}`);
+    if (list) {
+      list.classList.add('hidden');
+    }
+    savedListAutocompleteIndex = -1;
+  }, 150);
+}
+
+function updateSavedListAutocompleteSelection(listId) {
+  const list = document.getElementById(`savedListAutocomplete_${listId}`);
+  const items = list.querySelectorAll('.autocomplete-item');
+  items.forEach((item, i) => {
+    item.classList.toggle('selected', i === savedListAutocompleteIndex);
+    if (i === savedListAutocompleteIndex) item.scrollIntoView({ block: 'nearest' });
+  });
+}
+
 function renderDatabase() {
   const container = document.getElementById('dbList');
-  const countSpan = document.getElementById('dbCount');
   const searchInput = document.getElementById('dbSearch');
   const query = searchInput.value.toLowerCase();
   
@@ -1129,7 +1383,8 @@ function renderDatabase() {
   if (query) items = items.filter(i => i.name.toLowerCase().includes(query));
   items = items.sort((a, b) => a.name.localeCompare(b.name));
   
-  countSpan.textContent = items.length;
+  // Update the title with count
+  document.getElementById('dbTitle').innerHTML = `Database Items (<span id="dbCount">${items.length}</span>)`;
   
   container.innerHTML = items.map(item => {
     const tagClass = item.category === 'grocery' ? 'db-tag-grocery' : (item.category === 'vacation' ? 'db-tag-vacation' : 'db-tag-todo');
@@ -1153,6 +1408,23 @@ function updateSortButton() {
   const sortBtn = document.getElementById('sortBtn');
   sortBtn.className = `btn btn-small ${sortAlphabetically ? 'btn-purple' : 'btn-secondary'}`;
   sortBtn.textContent = sortAlphabetically ? 'A-Z' : 'A-Z';
+}
+
+function updateActionButtons() {
+  const category = getListCategory();
+  const saveBtn = document.getElementById('saveListBtn');
+  const clearBtn = document.getElementById('newListBtn');
+  
+  if (category === 'vacation') {
+    saveBtn.className = 'btn btn-small btn-save-vacation';
+    clearBtn.className = 'btn btn-small btn-clear-vacation';
+  } else if (category === 'todo') {
+    saveBtn.className = 'btn btn-small btn-save-todo';
+    clearBtn.className = 'btn btn-small btn-clear-todo';
+  } else {
+    saveBtn.className = 'btn btn-small btn-save-grocery';
+    clearBtn.className = 'btn btn-small btn-clear-grocery';
+  }
 }
 
 // Action functions
@@ -1240,7 +1512,13 @@ document.getElementById('toggleDbBtn').addEventListener('click', () => {
   document.getElementById('tabsContainer').classList.toggle('hidden', showDatabase);
   document.getElementById('toggleDbBtn').textContent = showDatabase ? 'Back to List' : 'Database';
   document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
-  if (showDatabase) renderDatabase();
+  if (showDatabase) {
+    if (dbViewMode === 'saved') {
+      renderSavedListsDb();
+    } else {
+      renderDatabase();
+    }
+  }
 });
 
 document.getElementById('toggleRecipesBtn').addEventListener('click', () => {
@@ -1415,6 +1693,19 @@ document.getElementById('closeSavedListsModalBtn').addEventListener('click', clo
 document.getElementById('deleteSavedListModal').addEventListener('click', closeDeleteSavedListModal);
 document.getElementById('closeDeleteSavedListModalBtn').addEventListener('click', closeDeleteSavedListModal);
 document.getElementById('confirmDeleteSavedListBtn').addEventListener('click', confirmDeleteSavedList);
+
+// Database View Toggle
+document.getElementById('dbViewItemsBtn').addEventListener('click', () => setDbViewMode('items'));
+document.getElementById('dbViewSavedBtn').addEventListener('click', () => setDbViewMode('saved'));
+
+// Saved List Filters
+document.getElementById('savedFilterAll').addEventListener('click', () => setSavedListFilter('all'));
+document.getElementById('savedFilterGrocery').addEventListener('click', () => setSavedListFilter('grocery'));
+document.getElementById('savedFilterVacation').addEventListener('click', () => setSavedListFilter('vacation'));
+document.getElementById('savedFilterTodo').addEventListener('click', () => setSavedListFilter('todo'));
+
+// Saved List Search
+document.getElementById('savedListSearch').addEventListener('input', renderSavedListsDb);
 
 // Initial render
 renderTabs();
