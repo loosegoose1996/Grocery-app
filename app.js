@@ -1222,12 +1222,12 @@ function renderSavedListsDb() {
     return `
       <div class="saved-list-card">
         <div class="saved-list-header" onclick="toggleSavedListExpand(${sl.id})">
-          <span class="saved-list-expand ${isExpanded ? 'expanded' : ''}">Ã¢â€“Â¶</span>
+          <span class="saved-list-expand ${isExpanded ? 'expanded' : ''}">&#9654</span>
           <span class="saved-list-name">${sl.name}</span>
           <span class="db-tag ${tagClass}">${tagText}</span>
           <span class="saved-list-count">${sl.items.length} items</span>
           <div class="saved-list-actions">
-            <button class="saved-list-action-btn load-btn" onclick="event.stopPropagation(); loadSavedList(${sl.id})" title="Load list">Ã¢â€ â€”</button>
+            <button class="saved-list-action-btn load-btn" onclick="event.stopPropagation(); loadSavedList(${sl.id})" title="Load list">&#8599”</button>
             <button class="saved-list-action-btn delete-btn" onclick="event.stopPropagation(); openDeleteSavedListModal(${sl.id})" title="Delete">&#x2715;</button>
           </div>
         </div>
