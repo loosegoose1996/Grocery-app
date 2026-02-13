@@ -189,6 +189,13 @@ let pendingOverwriteIndex = null;
 let dbViewMode = 'items'; // 'items' or 'saved'
 let savedListCategoryFilter = 'all';
 let expandedSavedListId = null;
+let showSchedule = false;
+let schedules = JSON.parse(localStorage.getItem('schedules')) || [];
+let editingScheduleId = null;
+let pendingDeleteScheduleId = null;
+let scheduleType = 'once';
+let scheduleDays = [];
+let scheduleCheckInterval = null;
 
 // Apply theme on load
 function applyTheme(theme) {
@@ -308,6 +315,7 @@ function exportData() {
     activeListId: activeListId,
     recipes: recipes,
     savedLists: savedLists,
+    schedules: schedules,
     database: groceryItems
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -337,10 +345,12 @@ function importData(event) {
       activeListId = data.activeListId || lists[0].id;
       recipes = data.recipes || [];
       savedLists = data.savedLists || [];
+      schedules = data.schedules || [];
       groceryItems = data.database || groceryItems;
       saveLists();
       saveRecipes();
       saveSavedLists();
+      saveSchedules();
       saveDatabase();
       renderTabs();
       renderAll();
@@ -554,14 +564,8 @@ function loadSavedList(id) {
   // Close modal if open
   closeSavedListsModal();
   
-  // If called from database view, switch back to main view
-  if (showDatabase) {
-    showDatabase = false;
-    document.getElementById('databaseView').classList.add('hidden');
-    document.getElementById('mainView').classList.remove('hidden');
-    document.getElementById('tabsContainer').classList.remove('hidden');
-    document.getElementById('toggleDbBtn').textContent = 'Database';
-  }
+  // Switch to main list view
+  navigateTo('list');
   
   suggestions = getRandomItems();
   renderTabs();
@@ -843,12 +847,8 @@ function addRecipeToList(listId) {
   closeAddToListModal();
   
   activeListId = listId;
-  showRecipes = false;
-  document.getElementById('recipesView').classList.add('hidden');
-  document.getElementById('mainView').classList.remove('hidden');
-  document.getElementById('tabsContainer').classList.remove('hidden');
-  document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
   saveLists();
+  navigateTo('list');
   renderTabs();
   renderAll();
 }
@@ -872,11 +872,7 @@ function addRecipeToNewList() {
   saveLists();
   closeAddToListModal();
   
-  showRecipes = false;
-  document.getElementById('recipesView').classList.add('hidden');
-  document.getElementById('mainView').classList.remove('hidden');
-  document.getElementById('tabsContainer').classList.remove('hidden');
-  document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
+  navigateTo('list');
   renderTabs();
   renderAll();
 }
@@ -1226,12 +1222,12 @@ function renderSavedListsDb() {
     return `
       <div class="saved-list-card">
         <div class="saved-list-header" onclick="toggleSavedListExpand(${sl.id})">
-          <span class="saved-list-expand ${isExpanded ? 'expanded' : ''}">▶</span>
+          <span class="saved-list-expand ${isExpanded ? 'expanded' : ''}">Ã¢â€“Â¶</span>
           <span class="saved-list-name">${sl.name}</span>
           <span class="db-tag ${tagClass}">${tagText}</span>
           <span class="saved-list-count">${sl.items.length} items</span>
           <div class="saved-list-actions">
-            <button class="saved-list-action-btn load-btn" onclick="event.stopPropagation(); loadSavedList(${sl.id})" title="Load list">↗</button>
+            <button class="saved-list-action-btn load-btn" onclick="event.stopPropagation(); loadSavedList(${sl.id})" title="Load list">Ã¢â€ â€”</button>
             <button class="saved-list-action-btn delete-btn" onclick="event.stopPropagation(); openDeleteSavedListModal(${sl.id})" title="Delete">&#x2715;</button>
           </div>
         </div>
@@ -1398,6 +1394,10 @@ function renderDatabase() {
   `}).join('');
 }
 
+function renderLastList() {
+  // Last list rendering - placeholder for last list UI if implemented
+}
+
 function renderAll() {
   renderItemChips();
   renderShoppingList();
@@ -1499,38 +1499,440 @@ function removeFromDatabase(name) {
   renderLastList();
 }
 
+// ==================== SCHEDULE FEATURE ====================
+const saveSchedules = () => localStorage.setItem('schedules', JSON.stringify(schedules));
+
+function setScheduleType(type) {
+  scheduleType = type;
+  document.getElementById('schedTypeOnce').className = `btn btn-small ${type === 'once' ? 'btn-schedule' : 'btn-secondary'}`;
+  document.getElementById('schedTypeInterval').className = `btn btn-small ${type === 'interval' ? 'btn-schedule' : 'btn-secondary'}`;
+  document.getElementById('schedTypeDayOfWeek').className = `btn btn-small ${type === 'dayofweek' ? 'btn-schedule' : 'btn-secondary'}`;
+  document.getElementById('schedOnceOptions').classList.toggle('hidden', type !== 'once');
+  document.getElementById('schedIntervalOptions').classList.toggle('hidden', type !== 'interval');
+  document.getElementById('schedDayOfWeekOptions').classList.toggle('hidden', type !== 'dayofweek');
+}
+
+function toggleScheduleDay(day) {
+  const index = scheduleDays.indexOf(day);
+  if (index >= 0) {
+    scheduleDays.splice(index, 1);
+  } else {
+    scheduleDays.push(day);
+    scheduleDays.sort();
+  }
+  updateDayButtons();
+}
+
+function updateDayButtons() {
+  document.querySelectorAll('.day-btn').forEach(btn => {
+    const day = parseInt(btn.getAttribute('data-day'));
+    btn.classList.toggle('selected', scheduleDays.includes(day));
+  });
+}
+
+function populateSavedListSelect() {
+  const select = document.getElementById('scheduleSavedListSelect');
+  select.innerHTML = '<option value="">-- Select a saved list --</option>' + 
+    savedLists.map(sl => `<option value="${sl.id}">${sl.name}</option>`).join('');
+}
+
+function openNewScheduleModal() {
+  if (savedLists.length === 0) {
+    alert('You need at least one saved list to create a schedule. Save a list first!');
+    return;
+  }
+  editingScheduleId = null;
+  scheduleType = 'once';
+  scheduleDays = [];
+  document.getElementById('scheduleModalTitle').textContent = 'New Schedule';
+  populateSavedListSelect();
+  document.getElementById('scheduleSavedListSelect').value = '';
+  setScheduleType('once');
+  
+  // Set default datetime to now + 1 hour
+  const now = new Date();
+  now.setHours(now.getHours() + 1);
+  now.setMinutes(0, 0, 0);
+  const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  document.getElementById('schedDateTime').value = localIso;
+  document.getElementById('schedIntervalStart').value = localIso;
+  document.getElementById('schedIntervalValue').value = '1';
+  document.getElementById('schedIntervalUnit').value = 'weeks';
+  document.getElementById('schedDayTime').value = '09:00';
+  updateDayButtons();
+  
+  document.getElementById('scheduleModal').classList.remove('hidden');
+}
+
+function openEditScheduleModal(id) {
+  const sched = schedules.find(s => s.id === id);
+  if (!sched) return;
+  editingScheduleId = id;
+  document.getElementById('scheduleModalTitle').textContent = 'Edit Schedule';
+  populateSavedListSelect();
+  document.getElementById('scheduleSavedListSelect').value = sched.savedListId;
+  
+  scheduleType = sched.type;
+  setScheduleType(sched.type);
+  
+  if (sched.type === 'once') {
+    document.getElementById('schedDateTime').value = sched.dateTime || '';
+  } else if (sched.type === 'interval') {
+    document.getElementById('schedIntervalValue').value = String(sched.intervalValue || 1);
+    document.getElementById('schedIntervalUnit').value = sched.intervalUnit || 'weeks';
+    const startDate = sched.nextRun ? new Date(sched.nextRun) : new Date();
+    const localIso = new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    document.getElementById('schedIntervalStart').value = localIso;
+  } else if (sched.type === 'dayofweek') {
+    scheduleDays = [...(sched.days || [])];
+    document.getElementById('schedDayTime').value = sched.timeOfDay || '09:00';
+    updateDayButtons();
+  }
+  
+  document.getElementById('scheduleModal').classList.remove('hidden');
+}
+
+function closeScheduleModal() {
+  document.getElementById('scheduleModal').classList.add('hidden');
+  editingScheduleId = null;
+}
+
+function saveSchedule() {
+  const savedListId = parseInt(document.getElementById('scheduleSavedListSelect').value);
+  if (!savedListId) {
+    alert('Please select a saved list.');
+    return;
+  }
+  
+  const savedList = savedLists.find(sl => sl.id === savedListId);
+  if (!savedList) {
+    alert('Selected saved list not found.');
+    return;
+  }
+  
+  let scheduleData = {
+    id: editingScheduleId || Date.now(),
+    savedListId: savedListId,
+    savedListName: savedList.name,
+    type: scheduleType,
+    completed: false,
+    lastRun: null,
+    createdAt: new Date().toISOString()
+  };
+  
+  if (scheduleType === 'once') {
+    const dateTime = document.getElementById('schedDateTime').value;
+    if (!dateTime) { alert('Please select a date and time.'); return; }
+    scheduleData.dateTime = dateTime;
+    scheduleData.nextRun = new Date(dateTime).toISOString();
+  } else if (scheduleType === 'interval') {
+    const intervalValue = parseInt(document.getElementById('schedIntervalValue').value);
+    const intervalUnit = document.getElementById('schedIntervalUnit').value;
+    const startFrom = document.getElementById('schedIntervalStart').value;
+    if (!intervalValue || intervalValue < 1) { alert('Please enter a valid interval.'); return; }
+    if (!startFrom) { alert('Please select a start date.'); return; }
+    scheduleData.intervalValue = intervalValue;
+    scheduleData.intervalUnit = intervalUnit;
+    scheduleData.nextRun = new Date(startFrom).toISOString();
+  } else if (scheduleType === 'dayofweek') {
+    if (scheduleDays.length === 0) { alert('Please select at least one day.'); return; }
+    const timeOfDay = document.getElementById('schedDayTime').value;
+    if (!timeOfDay) { alert('Please select a time.'); return; }
+    scheduleData.days = [...scheduleDays];
+    scheduleData.timeOfDay = timeOfDay;
+    scheduleData.nextRun = calculateNextDayOfWeekRun(scheduleDays, timeOfDay);
+  }
+  
+  if (editingScheduleId) {
+    const index = schedules.findIndex(s => s.id === editingScheduleId);
+    if (index >= 0) {
+      scheduleData.createdAt = schedules[index].createdAt;
+      schedules[index] = scheduleData;
+    }
+  } else {
+    schedules.push(scheduleData);
+  }
+  
+  saveSchedules();
+  closeScheduleModal();
+  renderScheduleList();
+}
+
+function calculateNextDayOfWeekRun(days, timeOfDay) {
+  const now = new Date();
+  const [hours, minutes] = timeOfDay.split(':').map(Number);
+  
+  // Check each of the next 7 days
+  for (let i = 0; i <= 7; i++) {
+    const candidate = new Date(now);
+    candidate.setDate(candidate.getDate() + i);
+    candidate.setHours(hours, minutes, 0, 0);
+    
+    if (days.includes(candidate.getDay()) && candidate > now) {
+      return candidate.toISOString();
+    }
+  }
+  
+  // Fallback: next week's first matching day
+  const candidate = new Date(now);
+  candidate.setDate(candidate.getDate() + 7);
+  candidate.setHours(hours, minutes, 0, 0);
+  return candidate.toISOString();
+}
+
+function calculateNextIntervalRun(schedule) {
+  const lastRun = new Date(schedule.nextRun);
+  const next = new Date(lastRun);
+  
+  if (schedule.intervalUnit === 'days') {
+    next.setDate(next.getDate() + schedule.intervalValue);
+  } else if (schedule.intervalUnit === 'weeks') {
+    next.setDate(next.getDate() + (schedule.intervalValue * 7));
+  } else if (schedule.intervalUnit === 'months') {
+    next.setMonth(next.getMonth() + schedule.intervalValue);
+  }
+  
+  return next.toISOString();
+}
+
+function openDeleteScheduleModal(id) {
+  pendingDeleteScheduleId = id;
+  document.getElementById('deleteScheduleModal').classList.remove('hidden');
+}
+
+function closeDeleteScheduleModal() {
+  document.getElementById('deleteScheduleModal').classList.add('hidden');
+  pendingDeleteScheduleId = null;
+}
+
+function confirmDeleteSchedule() {
+  if (pendingDeleteScheduleId !== null) {
+    schedules = schedules.filter(s => s.id !== pendingDeleteScheduleId);
+    saveSchedules();
+    renderScheduleList();
+  }
+  closeDeleteScheduleModal();
+}
+
+function triggerSchedule(id) {
+  const schedule = schedules.find(s => s.id === id);
+  if (!schedule) return;
+  
+  const savedList = savedLists.find(sl => sl.id === schedule.savedListId);
+  if (!savedList) {
+    alert('The saved list for this schedule no longer exists.');
+    return;
+  }
+  
+  executeSchedule(schedule);
+  renderScheduleList();
+}
+
+function executeSchedule(schedule) {
+  const savedList = savedLists.find(sl => sl.id === schedule.savedListId);
+  if (!savedList) return;
+  
+  if (lists.length >= 10) {
+    console.warn('Cannot auto-create list: maximum of 10 lists reached.');
+    return;
+  }
+  
+  const uniqueName = getUniqueName(savedList.name);
+  const newId = Math.max(...lists.map(l => l.id), 0) + 1;
+  const newList = {
+    id: newId,
+    name: uniqueName,
+    category: savedList.category,
+    items: JSON.parse(JSON.stringify(savedList.items)),
+    lastList: []
+  };
+  
+  lists.push(newList);
+  activeListId = newId;
+  schedule.lastRun = new Date().toISOString();
+  
+  if (schedule.type === 'once') {
+    schedule.completed = true;
+  } else if (schedule.type === 'interval') {
+    schedule.nextRun = calculateNextIntervalRun(schedule);
+  } else if (schedule.type === 'dayofweek') {
+    schedule.nextRun = calculateNextDayOfWeekRun(schedule.days, schedule.timeOfDay);
+  }
+  
+  saveSchedules();
+  saveLists();
+  
+  // Always refresh the main view tabs and list
+  renderTabs();
+  renderAll();
+}
+
+function checkSchedules() {
+  const now = new Date();
+  let anyFired = false;
+  
+  schedules.forEach(schedule => {
+    if (schedule.completed) return;
+    if (!schedule.nextRun) return;
+    
+    const nextRun = new Date(schedule.nextRun);
+    if (now >= nextRun) {
+      const savedList = savedLists.find(sl => sl.id === schedule.savedListId);
+      if (savedList) {
+        executeSchedule(schedule);
+        anyFired = true;
+      }
+    }
+  });
+  
+  if (anyFired && showSchedule) {
+    renderScheduleList();
+  }
+}
+
+function formatScheduleDescription(schedule) {
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  
+  if (schedule.type === 'once') {
+    const d = new Date(schedule.dateTime);
+    return `One-time: ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  } else if (schedule.type === 'interval') {
+    const unit = schedule.intervalUnit === 'days' ? 'day' : 
+                 schedule.intervalUnit === 'weeks' ? 'week' : 'month';
+    const plural = schedule.intervalValue > 1 ? 's' : '';
+    return `Every ${schedule.intervalValue} ${unit}${plural}`;
+  } else if (schedule.type === 'dayofweek') {
+    const daysStr = schedule.days.map(d => dayNames[d]).join(', ');
+    return `${daysStr} at ${schedule.timeOfDay}`;
+  }
+  return 'Unknown';
+}
+
+function formatNextRun(schedule) {
+  if (schedule.completed) return 'Completed';
+  if (!schedule.nextRun) return 'N/A';
+  const d = new Date(schedule.nextRun);
+  const now = new Date();
+  const diffMs = d - now;
+  
+  if (diffMs < 0) return 'Pending...';
+  if (diffMs < 60000) return 'In less than a minute';
+  if (diffMs < 3600000) return `In ${Math.round(diffMs / 60000)} min`;
+  if (diffMs < 86400000) return `In ${Math.round(diffMs / 3600000)} hours`;
+  return d.toLocaleDateString() + ' at ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderScheduleList() {
+  const container = document.getElementById('scheduleList');
+  const countSpan = document.getElementById('scheduleCount');
+  
+  countSpan.textContent = schedules.length;
+  
+  if (schedules.length === 0) {
+    container.innerHTML = '<p style="color: #9ca3af; font-size: 14px; text-align: center; padding: 20px;">No scheduled lists yet. Create one to auto-generate lists on a schedule!</p>';
+    return;
+  }
+  
+  // Sort: active first, then completed; by nextRun date
+  const sorted = [...schedules].sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    return new Date(a.nextRun || 0) - new Date(b.nextRun || 0);
+  });
+  
+  container.innerHTML = sorted.map(sched => {
+    const savedList = savedLists.find(sl => sl.id === sched.savedListId);
+    const listName = savedList ? savedList.name : `(Deleted: ${sched.savedListName})`;
+    const desc = formatScheduleDescription(sched);
+    const nextRun = formatNextRun(sched);
+    const statusClass = sched.completed ? 'schedule-status-completed' : 'schedule-status-active';
+    const statusText = sched.completed ? 'Completed' : 'Active';
+    const cardClass = sched.completed ? 'schedule-card completed' : 'schedule-card';
+    const lastRunText = sched.lastRun ? `Last run: ${new Date(sched.lastRun).toLocaleDateString()} ${new Date(sched.lastRun).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : '';
+    
+    return `
+      <div class="${cardClass}">
+        <div class="schedule-card-header">
+          <span class="schedule-card-name">${listName}</span>
+          <div class="schedule-card-actions">
+            <button class="schedule-action-btn trigger-btn" onclick="triggerSchedule(${sched.id})" title="Run now">&#9654; Run</button>
+            <button class="schedule-action-btn" onclick="openEditScheduleModal(${sched.id})" title="Edit">&#9998;</button>
+            <button class="schedule-action-btn" onclick="openDeleteScheduleModal(${sched.id})" title="Delete">&#x2715;</button>
+          </div>
+        </div>
+        <div class="schedule-card-details">
+          <span><span class="${statusClass}">${statusText}</span> <span class="schedule-tag">${sched.type === 'once' ? 'One-time' : sched.type === 'interval' ? 'Recurring' : 'Weekly'}</span></span>
+          <span>${desc}</span>
+          <span>Next: ${nextRun}</span>
+          ${lastRunText ? `<span>${lastRunText}</span>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 // Initialize
 suggestions = getRandomItems();
 
 // Event listeners
-document.getElementById('toggleDbBtn').addEventListener('click', () => {
-  showDatabase = !showDatabase;
-  showRecipes = false;
-  document.getElementById('databaseView').classList.toggle('hidden', !showDatabase);
-  document.getElementById('recipesView').classList.add('hidden');
-  document.getElementById('mainView').classList.toggle('hidden', showDatabase);
-  document.getElementById('tabsContainer').classList.toggle('hidden', showDatabase);
-  document.getElementById('toggleDbBtn').textContent = showDatabase ? 'Back to List' : 'Database';
-  document.getElementById('toggleRecipesBtn').textContent = 'Recipes';
-  if (showDatabase) {
+// Unified navigation function
+function navigateTo(view) {
+  // Update state
+  showSchedule = (view === 'schedule');
+  showDatabase = (view === 'database');
+  showRecipes = (view === 'recipes');
+  
+  // Toggle views
+  document.getElementById('scheduleView').classList.toggle('hidden', view !== 'schedule');
+  document.getElementById('databaseView').classList.toggle('hidden', view !== 'database');
+  document.getElementById('recipesView').classList.toggle('hidden', view !== 'recipes');
+  document.getElementById('mainView').classList.toggle('hidden', view !== 'list');
+  document.getElementById('tabsContainer').classList.toggle('hidden', view !== 'list');
+  
+  // Update bottom nav active state
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  
+  // Render the appropriate view
+  if (view === 'schedule') renderScheduleList();
+  if (view === 'database') {
     if (dbViewMode === 'saved') {
       renderSavedListsDb();
     } else {
       renderDatabase();
     }
   }
+  if (view === 'recipes') renderRecipeList();
+  if (view === 'list') {
+    renderTabs();
+    renderAll();
+  }
+}
+
+// Bottom nav event listeners
+document.getElementById('navListBtn').addEventListener('click', () => navigateTo('list'));
+
+document.getElementById('toggleScheduleBtn').addEventListener('click', () => {
+  navigateTo(showSchedule ? 'list' : 'schedule');
+});
+
+// Schedule modals
+document.getElementById('newScheduleBtn').addEventListener('click', openNewScheduleModal);
+document.getElementById('scheduleModal').addEventListener('click', closeScheduleModal);
+document.getElementById('closeScheduleModalBtn').addEventListener('click', closeScheduleModal);
+document.getElementById('saveScheduleBtn').addEventListener('click', saveSchedule);
+
+document.getElementById('deleteScheduleModal').addEventListener('click', closeDeleteScheduleModal);
+document.getElementById('closeDeleteScheduleModalBtn').addEventListener('click', closeDeleteScheduleModal);
+document.getElementById('confirmDeleteScheduleBtn').addEventListener('click', confirmDeleteSchedule);
+
+// Database toggle
+document.getElementById('toggleDbBtn').addEventListener('click', () => {
+  navigateTo(showDatabase ? 'list' : 'database');
 });
 
 document.getElementById('toggleRecipesBtn').addEventListener('click', () => {
-  showRecipes = !showRecipes;
-  showDatabase = false;
-  document.getElementById('recipesView').classList.toggle('hidden', !showRecipes);
-  document.getElementById('databaseView').classList.add('hidden');
-  document.getElementById('mainView').classList.toggle('hidden', showRecipes);
-  document.getElementById('tabsContainer').classList.toggle('hidden', showRecipes);
-  document.getElementById('toggleRecipesBtn').textContent = showRecipes ? 'Back to List' : 'Recipes';
-  document.getElementById('toggleDbBtn').textContent = 'Database';
-  if (showRecipes) renderRecipeList();
+  navigateTo(showRecipes ? 'list' : 'recipes');
 });
 
 document.getElementById('refreshBtn').addEventListener('click', () => {
@@ -1625,8 +2027,11 @@ document.getElementById('categoryModal').addEventListener('click', closeCategory
 document.getElementById('closeCategoryModalBtn').addEventListener('click', closeCategoryModal);
 document.getElementById('confirmAddItemBtn').addEventListener('click', confirmAddItem);
 
-// Import/Export
-document.getElementById('importExportBtn').addEventListener('click', openImportExportModal);
+// Import/Export (Settings opens modal, doesn't navigate)
+document.getElementById('importExportBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  openImportExportModal();
+});
 document.getElementById('importExportModal').addEventListener('click', closeImportExportModal);
 document.getElementById('closeImportExportModalBtn').addEventListener('click', closeImportExportModal);
 document.getElementById('exportDataBtn').addEventListener('click', exportData);
@@ -1711,3 +2116,7 @@ document.getElementById('savedListSearch').addEventListener('input', renderSaved
 renderTabs();
 renderAll();
 updateSortButton();
+
+// Schedule: check on load and every 30 seconds
+checkSchedules();
+scheduleCheckInterval = setInterval(checkSchedules, 30000);
