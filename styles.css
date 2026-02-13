@@ -53,7 +53,7 @@ body {
   background: linear-gradient(135deg, var(--bg-gradient-1) 0%, var(--bg-gradient-2) 100%); 
   min-height: 100vh; 
   padding: 16px; 
-  padding-bottom: 80px; 
+  padding-bottom: 100px; 
   -webkit-tap-highlight-color: transparent; 
 }
 
@@ -361,7 +361,8 @@ input[type="number"].input {
   align-items: stretch;
   background: var(--card-bg);
   border-top: 1px solid var(--border-color);
-  padding: 4px 0 env(safe-area-inset-bottom, 8px) 0;
+  padding: 8px 0;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   z-index: 900;
   box-shadow: 0 -2px 12px var(--shadow);
 }
@@ -373,7 +374,7 @@ input[type="number"].input {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 8px 4px 4px;
+  padding: 6px 4px 4px;
   background: none;
   border: none;
   cursor: pointer;
@@ -417,8 +418,8 @@ input[type="number"].input {
 }
 
 .bottom-nav-icon {
-  width: 20px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
 }
 
