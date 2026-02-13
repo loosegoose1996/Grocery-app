@@ -417,8 +417,8 @@ input[type="number"].input {
 }
 
 .bottom-nav-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 24px;
   flex-shrink: 0;
 }
 
