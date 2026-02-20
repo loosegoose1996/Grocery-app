@@ -1056,6 +1056,7 @@ function selectListFromDropdown(id) {
   renderPanelContent(activeListId);
   updateSortButton();
   snapToActivePanel(false); // instant snap
+  window.scrollTo(0, 0);
 }
 
 // ==================== SWIPE PANELS ====================
@@ -1399,6 +1400,7 @@ function initSwipeGestures() {
       renderListSelector();
       renderAllActivePanel();
       updateSortButton();
+      window.scrollTo(0, 0);
     } else if (swipeCurrentX > threshold && activeIndex > 0) {
       // Swipe right -> prev list
       activeListId = lists[activeIndex - 1].id;
@@ -1408,6 +1410,7 @@ function initSwipeGestures() {
       renderListSelector();
       renderAllActivePanel();
       updateSortButton();
+      window.scrollTo(0, 0);
     }
     
     snapToActivePanel(true);
