@@ -1200,7 +1200,7 @@ function renderPanelContent(listId) {
         <span class="card-title">Items</span>
         <button class="link-btn ${showRefresh ? '' : 'hidden'}" id="${refreshBtnId}" onclick="refreshPanelSuggestions(${list.id})">Refresh</button>
       </div>
-      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearch(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})" autocomplete="off">
+      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearch(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})">
       <div class="chips" id="${chipsContainerId}">${chipsHtml}</div>
     </div>
     <div class="card">
