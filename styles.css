@@ -633,11 +633,12 @@ input[type="number"].input {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 24px;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
   transition: all 0.1s;
+  line-height: 1;
 }
 
 .list-dropdown-action:active {
@@ -1019,10 +1020,11 @@ input[type="number"].input {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 26px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 .saved-list-action-btn:active {
@@ -1162,10 +1164,11 @@ input[type="number"].input {
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: 26px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 .schedule-action-btn:active {
@@ -1174,7 +1177,7 @@ input[type="number"].input {
 
 .schedule-action-btn.trigger-btn {
   color: #8b5cf6;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
 }
 
