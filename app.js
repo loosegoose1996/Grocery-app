@@ -964,7 +964,8 @@ let listDropdownOpen = false;
 
 function renderTabs() {
   renderListSelector();
-  renderSwipePanels();
+  // Only sync panel structure if lists changed (add/delete)
+  syncSwipePanels();
 }
 
 // ==================== LIST SELECTOR (Dropdown Bar) ====================
@@ -1052,8 +1053,7 @@ function selectListFromDropdown(id) {
   sortAlphabetically = false;
   suggestions = getRandomItems();
   renderListSelector();
-  renderSwipePanels();
-  renderAllActivePanel();
+  renderPanelContent(activeListId);
   updateSortButton();
   snapToActivePanel(false); // instant snap
 }
@@ -1065,6 +1065,27 @@ let swipeTouchStartY = 0;
 let swipeCurrentX = 0;
 let swipeIsSwiping = false;
 let swipeLockedAxis = null; // null | 'horizontal' | 'vertical'
+
+// Lightweight: only add/remove panels if the list structure changed
+function syncSwipePanels() {
+  const track = document.getElementById('swipeTrack');
+  const existingPanels = track.querySelectorAll('.swipe-panel');
+  const existingIds = new Set(Array.from(existingPanels).map(p => p.getAttribute('data-list-id')));
+  const currentIds = new Set(lists.map(l => String(l.id)));
+  
+  // If sets match exactly (same ids, same order), no structural change needed
+  const existingArr = Array.from(existingPanels).map(p => p.getAttribute('data-list-id'));
+  const currentArr = lists.map(l => String(l.id));
+  
+  if (existingArr.length === currentArr.length && existingArr.every((id, i) => id === currentArr[i])) {
+    // No structural change - just snap to active
+    snapToActivePanel(false);
+    return;
+  }
+  
+  // Structure changed - do a full rebuild
+  renderSwipePanels();
+}
 
 function renderSwipePanels() {
   const track = document.getElementById('swipeTrack');
@@ -1111,8 +1132,13 @@ function renderPanelContent(listId) {
     });
     chipItems = results;
   } else {
-    let available = groceryItems.filter(i => i.category === category);
-    chipItems = available.sort(() => Math.random() - 0.5).slice(0, 5).map(i => i.name);
+    // Use cached suggestions for active panel; generate for others
+    if (isActive && suggestions.length > 0) {
+      chipItems = suggestions;
+    } else {
+      chipItems = groceryItems.filter(i => i.category === category)
+        .sort(() => Math.random() - 0.5).slice(0, 5).map(i => i.name);
+    }
   }
   
   // Chips HTML
@@ -1166,14 +1192,16 @@ function renderPanelContent(listId) {
   const searchInputId = isActive ? 'searchInput_active' : `searchInput_${list.id}`;
   const showRefresh = !searchVal.trim();
 
+  const chipsContainerId = `chips_${list.id}`;
+
   panel.innerHTML = `
     <div class="card">
       <div class="card-header">
         <span class="card-title">Items</span>
         <button class="link-btn ${showRefresh ? '' : 'hidden'}" id="${refreshBtnId}" onclick="refreshPanelSuggestions(${list.id})">Refresh</button>
       </div>
-      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearch(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})" autocomplete="off">
-      <div class="chips">${chipsHtml}</div>
+      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearchDebounced(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})" autocomplete="off">
+      <div class="chips" id="${chipsContainerId}">${chipsHtml}</div>
     </div>
     <div class="card">
       <div class="card-header">
@@ -1197,9 +1225,6 @@ function refreshPanelSuggestions(listId) {
 
 // Lightweight: only update the chips area inside a panel (used for search typing)
 function updatePanelChips(listId) {
-  const panel = document.getElementById(`panel-${listId}`);
-  if (!panel) return;
-  
   const list = lists.find(l => l.id === listId);
   if (!list) return;
   
@@ -1218,21 +1243,21 @@ function updatePanelChips(listId) {
   
   let chipItems;
   if (searchVal.trim()) {
+    const q = searchVal.toLowerCase();
     chipItems = groceryItems.filter(i =>
-      i.category === category && i.name.toLowerCase().includes(searchVal.toLowerCase())
+      i.category === category && i.name.toLowerCase().includes(q)
     ).map(i => i.name).sort((a, b) => {
-      const aS = a.toLowerCase().startsWith(searchVal.toLowerCase());
-      const bS = b.toLowerCase().startsWith(searchVal.toLowerCase());
+      const aS = a.toLowerCase().startsWith(q);
+      const bS = b.toLowerCase().startsWith(q);
       if (aS && !bS) return -1;
       if (!aS && bS) return 1;
       return a.localeCompare(b);
     });
   } else {
-    // Keep existing suggestions if we have them, else generate new
     chipItems = suggestions.length > 0 ? suggestions : getRandomItems();
   }
   
-  const chipsContainer = panel.querySelector('.chips');
+  const chipsContainer = document.getElementById(`chips_${listId}`);
   if (!chipsContainer) return;
   
   if (searchVal.trim() && chipItems.length === 0) {
@@ -1248,6 +1273,15 @@ function updatePanelChips(listId) {
     const badge = isFirst ? `<span class="${theme.badge}">&#x21A9;</span>` : '';
     return `<div class="chip-badge">${badge}<button class="${chipClass}" onclick="toggleItem('${item.replace(/'/g, "\\'")}')">${item}</button></div>`;
   }).join('');
+}
+
+// Debounced search: waits for typing to pause before updating chips
+let _searchDebounceTimer = null;
+function onPanelSearchDebounced(listId) {
+  if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
+  _searchDebounceTimer = setTimeout(() => {
+    updatePanelChips(listId);
+  }, 80);
 }
 
 function onPanelSearch(listId) {
