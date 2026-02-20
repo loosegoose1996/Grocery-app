@@ -57,7 +57,26 @@
       </button>
     </nav>
 
-    <div class="tabs-container" id="tabsContainer"></div>
+    <!-- List Dropdown Overlay -->
+    <div class="list-dropdown-overlay" id="listDropdownOverlay"></div>
+
+    <!-- List Selector Bar (compact dropdown) -->
+    <div class="list-selector" id="listSelector">
+      <div class="list-selector-left" id="listSelectorTap">
+        <span class="list-selector-name" id="listSelectorName">Grocery</span>
+        <svg class="list-selector-chevron" id="listSelectorChevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="list-selector-right">
+        <div class="list-selector-pips" id="listSelectorPips"></div>
+        <div class="list-selector-actions">
+          <button class="btn btn-small btn-save-grocery" id="saveListBtn">Save</button>
+          <button class="btn btn-small btn-secondary" id="sortBtn">A-Z</button>
+          <button class="btn btn-small btn-clear-grocery" id="newListBtn">Clear</button>
+        </div>
+      </div>
+      <!-- Dropdown -->
+      <div class="list-dropdown" id="listDropdown"></div>
+    </div>
 
     <!-- New List Modal -->
     <div class="modal-overlay hidden" id="newListModal">
@@ -102,7 +121,6 @@
         <p style="color: #6b7280; font-size: 14px; margin-bottom: 12px;">Which list type should this item appear in?</p>
         <select class="select" id="categorySelect">
           <option value="grocery">Grocery</option>
-          <option value="vacation">Vacation</option>
           <option value="todo">To-Do</option>
         </select>
         <div class="modal-buttons">
@@ -388,7 +406,6 @@
           <div class="filter-row mb-12">
             <button class="btn btn-small btn-primary" id="dbFilterAll">All</button>
             <button class="btn btn-small btn-secondary" id="dbFilterGrocery">Grocery</button>
-            <button class="btn btn-small btn-secondary" id="dbFilterVacation">Vacation</button>
             <button class="btn btn-small btn-secondary" id="dbFilterTodo">To-Do</button>
           </div>
           <div class="input-row">
@@ -404,7 +421,6 @@
           <div class="filter-row mb-12">
             <button class="btn btn-small btn-primary" id="savedFilterAll">All</button>
             <button class="btn btn-small btn-secondary" id="savedFilterGrocery">Grocery</button>
-            <button class="btn btn-small btn-secondary" id="savedFilterVacation">Vacation</button>
             <button class="btn btn-small btn-secondary" id="savedFilterTodo">To-Do</button>
           </div>
           <div class="list-container" id="savedListsDbContainer"></div>
@@ -414,25 +430,10 @@
 
     <!-- Main View -->
     <div id="mainView">
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title">Items</span>
-          <button class="link-btn" id="refreshBtn">Refresh</button>
+      <div class="swipe-viewport" id="swipeViewport">
+        <div class="swipe-track" id="swipeTrack">
+          <!-- Panels are rendered dynamically by JS -->
         </div>
-        <input type="text" class="input mb-12" id="searchInput" placeholder="Search items...">
-        <div class="chips" id="itemChips"></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
-          <span class="card-title"><span id="listTitle">Shopping List</span> (<span id="listCount">0</span>)</span>
-          <div class="btn-group">
-            <button class="btn btn-small btn-save-grocery" id="saveListBtn">Save</button>
-            <button class="btn btn-small btn-secondary" id="sortBtn">A-Z</button>
-            <button class="btn btn-small btn-clear-grocery" id="newListBtn">Clear</button>
-          </div>
-        </div>
-        <div id="shoppingListEmpty" class="list-empty">Tap items above to add them to your list</div>
-        <div id="shoppingList" class="list-container hidden"></div>
       </div>
     </div>
   </div>
