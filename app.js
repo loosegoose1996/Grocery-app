@@ -1200,7 +1200,7 @@ function renderPanelContent(listId) {
         <span class="card-title">Items</span>
         <button class="link-btn ${showRefresh ? '' : 'hidden'}" id="${refreshBtnId}" onclick="refreshPanelSuggestions(${list.id})">Refresh</button>
       </div>
-      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearchDebounced(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})" autocomplete="off">
+      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearch(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})" autocomplete="off">
       <div class="chips" id="${chipsContainerId}">${chipsHtml}</div>
     </div>
     <div class="card">
@@ -1275,17 +1275,7 @@ function updatePanelChips(listId) {
   }).join('');
 }
 
-// Debounced search: waits for typing to pause before updating chips
-let _searchDebounceTimer = null;
-function onPanelSearchDebounced(listId) {
-  if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
-  _searchDebounceTimer = setTimeout(() => {
-    updatePanelChips(listId);
-  }, 80);
-}
-
 function onPanelSearch(listId) {
-  // Only update chips — don't rebuild the whole panel
   updatePanelChips(listId);
 }
 
