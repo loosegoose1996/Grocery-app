@@ -1195,17 +1195,64 @@ function refreshPanelSuggestions(listId) {
   renderPanelContent(listId);
 }
 
-function onPanelSearch(listId) {
-  // Re-render just that panel's chips
-  renderPanelContent(listId);
-  // Re-focus the search input
-  const input = document.getElementById('searchInput_active') || document.getElementById(`searchInput_${listId}`);
-  if (input) {
-    const val = input.value;
-    input.focus();
-    input.value = '';
-    input.value = val; // restore cursor at end
+// Lightweight: only update the chips area inside a panel (used for search typing)
+function updatePanelChips(listId) {
+  const panel = document.getElementById(`panel-${listId}`);
+  if (!panel) return;
+  
+  const list = lists.find(l => l.id === listId);
+  if (!list) return;
+  
+  const category = list.category || 'grocery';
+  const theme = category === 'todo'
+    ? { chip: 'chip-selected-todo', highlight: 'chip-highlight-todo', badge: 'badge-todo' }
+    : { chip: 'chip-selected', highlight: 'chip-highlight', badge: 'badge' };
+  
+  const isActive = list.id === activeListId;
+  const searchInput = document.getElementById(isActive ? 'searchInput_active' : `searchInput_${listId}`);
+  const searchVal = searchInput ? searchInput.value : '';
+  
+  // Update refresh button visibility
+  const refreshBtn = document.getElementById(`refreshBtn_${listId}`);
+  if (refreshBtn) refreshBtn.classList.toggle('hidden', searchVal.trim().length > 0);
+  
+  let chipItems;
+  if (searchVal.trim()) {
+    chipItems = groceryItems.filter(i =>
+      i.category === category && i.name.toLowerCase().includes(searchVal.toLowerCase())
+    ).map(i => i.name).sort((a, b) => {
+      const aS = a.toLowerCase().startsWith(searchVal.toLowerCase());
+      const bS = b.toLowerCase().startsWith(searchVal.toLowerCase());
+      if (aS && !bS) return -1;
+      if (!aS && bS) return 1;
+      return a.localeCompare(b);
+    });
+  } else {
+    // Keep existing suggestions if we have them, else generate new
+    chipItems = suggestions.length > 0 ? suggestions : getRandomItems();
   }
+  
+  const chipsContainer = panel.querySelector('.chips');
+  if (!chipsContainer) return;
+  
+  if (searchVal.trim() && chipItems.length === 0) {
+    chipsContainer.innerHTML = `<div><p style="color: #9ca3af; font-size: 14px; margin-bottom: 8px;">No items found</p>
+      <button class="btn btn-primary" onclick="openCategoryModal('${searchVal.trim().replace(/'/g, "\\'")}')">+ Add "${searchVal.trim()}"</button></div>`;
+    return;
+  }
+  
+  chipsContainer.innerHTML = chipItems.map((item, index) => {
+    const isSelected = list.items.some(i => i.name === item || i === item);
+    const isFirst = searchVal.trim() && index === 0;
+    const chipClass = isSelected ? `chip ${theme.chip}` : (isFirst ? `chip ${theme.highlight}` : 'chip chip-default');
+    const badge = isFirst ? `<span class="${theme.badge}">&#x21A9;</span>` : '';
+    return `<div class="chip-badge">${badge}<button class="${chipClass}" onclick="toggleItem('${item.replace(/'/g, "\\'")}')">${item}</button></div>`;
+  }).join('');
+}
+
+function onPanelSearch(listId) {
+  // Only update chips — don't rebuild the whole panel
+  updatePanelChips(listId);
 }
 
 function onPanelSearchKeydown(event, listId) {
@@ -1226,6 +1273,9 @@ function onPanelSearchKeydown(event, listId) {
         input.value = '';
         renderPanelContent(listId);
         renderListSelector();
+        // Re-focus search after full render
+        const newInput = document.getElementById(list.id === activeListId ? 'searchInput_active' : `searchInput_${listId}`);
+        if (newInput) newInput.focus();
       }
     } else if (query) {
       openCategoryModal(query);
