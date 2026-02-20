@@ -10,7 +10,6 @@
   --chip-default-bg: #f3f4f6;
   --chip-default-text: #374151;
   --list-item-grocery-bg: #ecfdf5;
-  --list-item-vacation-bg: #fee2e2;
   --list-item-todo-bg: #dbeafe;
   --db-item-bg: #f9fafb;
   --modal-overlay: rgba(0,0,0,0.5);
@@ -34,7 +33,6 @@
   --chip-default-bg: #334155;
   --chip-default-text: #e2e8f0;
   --list-item-grocery-bg: #064e3b;
-  --list-item-vacation-bg: #7f1d1d;
   --list-item-todo-bg: #1e3a5f;
   --db-item-bg: #0f172a;
   --modal-overlay: rgba(0,0,0,0.7);
@@ -170,11 +168,9 @@ input[type="number"].input {
 .chip-default:active { background: var(--border-color); }
 
 .chip-selected { background: #10b981; color: white; box-shadow: 0 2px 8px rgba(16,185,129,0.3); }
-.chip-selected-vacation { background: #ef4444; color: white; box-shadow: 0 2px 8px rgba(239,68,68,0.3); }
 .chip-selected-todo { background: #3b82f6; color: white; box-shadow: 0 2px 8px rgba(59,130,246,0.3); }
 
 .chip-highlight { background: #d1fae5; color: #065f46; box-shadow: 0 0 0 2px #10b981; }
-.chip-highlight-vacation { background: #fee2e2; color: #991b1b; box-shadow: 0 0 0 2px #ef4444; }
 .chip-highlight-todo { background: #dbeafe; color: #1e40af; box-shadow: 0 0 0 2px #3b82f6; }
 
 .chip-badge { position: relative; }
@@ -185,17 +181,6 @@ input[type="number"].input {
   top: -6px; 
   left: -6px; 
   background: #059669; 
-  color: white; 
-  font-size: 10px; 
-  padding: 2px 6px; 
-  border-radius: 10px; 
-}
-
-.badge-vacation { 
-  position: absolute; 
-  top: -6px; 
-  left: -6px; 
-  background: #dc2626; 
   color: white; 
   font-size: 10px; 
   padding: 2px 6px; 
@@ -241,16 +226,6 @@ input[type="number"].input {
   margin-bottom: 8px; 
 }
 
-.list-item-vacation { 
-  display: flex; 
-  align-items: center; 
-  gap: 12px; 
-  padding: 12px; 
-  background: var(--list-item-vacation-bg); 
-  border-radius: 12px; 
-  margin-bottom: 8px; 
-}
-
 .list-item-todo { 
   display: flex; 
   align-items: center; 
@@ -265,20 +240,6 @@ input[type="number"].input {
   width: 24px; 
   height: 24px; 
   background: #10b981; 
-  color: white; 
-  border-radius: 50%; 
-  display: flex; 
-  align-items: center; 
-  justify-content: center; 
-  font-size: 12px; 
-  font-weight: 600; 
-  flex-shrink: 0; 
-}
-
-.list-number-vacation { 
-  width: 24px; 
-  height: 24px; 
-  background: #ef4444; 
   color: white; 
   border-radius: 50%; 
   display: flex; 
@@ -347,8 +308,7 @@ input[type="number"].input {
 
 .db-tag { padding: 2px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
 .db-tag-grocery { background: #d1fae5; color: #065f46; }
-.db-tag-vacation { background: #dbeafe; color: #1e40af; }
-.db-tag-todo { background: #fef3c7; color: #92400e; }
+.db-tag-todo { background: #dbeafe; color: #1e40af; }
 
 /* Bottom Navigation Bar */
 .bottom-nav {
@@ -453,114 +413,271 @@ input[type="number"].input {
 .mb-12 { margin-bottom: 12px; }
 .mb-8 { margin-bottom: 8px; }
 
-/* Tabs */
-.tabs-container { 
-  display: flex; 
-  gap: 4px; 
-  margin-bottom: 16px; 
-  overflow-x: auto; 
-  -webkit-overflow-scrolling: touch; 
-  padding-bottom: 4px; 
+/* List Selector Bar */
+.list-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  background: var(--card-bg);
+  border-radius: 14px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 8px var(--shadow);
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.tab { 
-  padding: 8px 12px; 
-  border-radius: 12px 12px 0 0; 
-  border: none; 
-  font-size: 13px; 
-  font-weight: 500; 
-  cursor: pointer; 
-  white-space: nowrap; 
-  background: var(--border-color); 
-  color: var(--text-secondary); 
-  display: flex; 
-  align-items: center; 
-  gap: 6px; 
+.list-selector-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  padding: 2px 4px;
+  border-radius: 8px;
+  transition: background 0.15s;
+  min-width: 0;
 }
 
-.tab:active { background: var(--chip-default-bg); }
-
-.tab-active { 
-  background: var(--card-bg); 
-  color: #065f46; 
-  box-shadow: 0 -2px 8px var(--shadow); 
+.list-selector-left:active {
+  background: var(--chip-default-bg);
 }
 
-[data-theme="dark"] .tab-active { color: #6ee7b7; }
-
-.tab-name { pointer-events: none; }
-
-.tab-close { 
-  background: none; 
-  border: none; 
-  color: var(--text-muted); 
-  font-size: 14px; 
-  cursor: pointer; 
-  padding: 2px 4px; 
-  line-height: 1; 
-  border-radius: 4px; 
+.list-selector-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
 }
 
-.tab-close:active { background: rgba(0,0,0,0.1); color: #ef4444; }
-
-.tab-active .tab-close { color: var(--text-secondary); }
-
-.tab-add { 
-  background: #10b981; 
-  color: white; 
-  font-size: 16px; 
-  padding: 8px 14px; 
+.list-selector-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
 }
 
-.tab-add:active { background: #059669; }
-
-.tab-add-vacation {
-  background: #ef4444;
-  color: white;
-  font-size: 16px;
-  padding: 8px 14px;
+.list-selector-chevron.open {
+  transform: rotate(180deg);
 }
 
-.tab-add-vacation:active { background: #dc2626; }
+.list-selector-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
 
-.tab-add-todo {
+.list-selector-pips {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.list-selector-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-color);
+  transition: all 0.25s ease;
+}
+
+.list-selector-pip.active {
+  width: 16px;
+  border-radius: 3px;
+  background: #10b981;
+}
+
+.list-selector-pip.active-todo {
+  width: 16px;
+  border-radius: 3px;
   background: #3b82f6;
+}
+
+.list-selector-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* List Dropdown */
+.list-dropdown-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--modal-overlay);
+  z-index: 950;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.list-dropdown-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.list-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--card-bg);
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+  z-index: 960;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: max-height 0.3s ease, opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+.list-dropdown.open {
+  max-height: 420px;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  overflow-y: auto;
+}
+
+.list-dropdown-header {
+  padding: 12px 14px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.list-dropdown-add-btn {
+  background: #10b981;
   color: white;
-  font-size: 16px;
-  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.tab-add-todo:active { background: #2563eb; }
-
-/* Themed active tabs */
-.tab-active { 
-  background: var(--card-bg); 
-  color: #065f46; 
-  box-shadow: 0 -2px 8px var(--shadow); 
+.list-dropdown-add-btn:active {
+  background: #059669;
 }
 
-.tab-active-vacation {
-  background: var(--card-bg);
-  color: #dc2626;
-  box-shadow: 0 -2px 8px var(--shadow);
+.list-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.tab-active-todo {
-  background: var(--card-bg);
-  color: #2563eb;
-  box-shadow: 0 -2px 8px var(--shadow);
+.list-dropdown-item:last-child {
+  border-radius: 0 0 14px 14px;
 }
 
-[data-theme="dark"] .tab-active { color: #6ee7b7; }
-[data-theme="dark"] .tab-active-vacation { color: #fca5a5; }
-[data-theme="dark"] .tab-active-todo { color: #93c5fd; }
+.list-dropdown-item:active {
+  background: var(--chip-default-bg);
+}
+
+.list-dropdown-item.active-item {
+  background: var(--chip-default-bg);
+}
+
+.list-dropdown-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.list-dropdown-item-name {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-dropdown-item-count {
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--chip-default-bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.list-dropdown-item-actions {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.list-dropdown-action {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all 0.1s;
+}
+
+.list-dropdown-action:active {
+  background: var(--border-color);
+}
+
+.list-dropdown-action.rename-action:active {
+  color: #10b981;
+}
+
+.list-dropdown-action.delete-action:active {
+  color: #ef4444;
+}
+
+/* Swipe Viewport */
+.swipe-viewport {
+  overflow: hidden;
+  position: relative;
+  touch-action: pan-y;
+}
+
+.swipe-track {
+  display: flex;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+
+.swipe-track.swiping {
+  transition: none;
+}
+
+.swipe-panel {
+  flex: 0 0 100%;
+  width: 100%;
+  min-height: 100px;
+}
 
 /* Themed Save button */
 .btn-save-grocery { background: #10b981; color: white; }
 .btn-save-grocery:active { background: #059669; }
-
-.btn-save-vacation { background: #ef4444; color: white; }
-.btn-save-vacation:active { background: #dc2626; }
 
 .btn-save-todo { background: #3b82f6; color: white; }
 .btn-save-todo:active { background: #2563eb; }
@@ -568,9 +685,6 @@ input[type="number"].input {
 /* Themed Clear button */
 .btn-clear-grocery { background: #14b8a6; color: white; }
 .btn-clear-grocery:active { background: #0d9488; }
-
-.btn-clear-vacation { background: #f87171; color: white; }
-.btn-clear-vacation:active { background: #ef4444; }
 
 .btn-clear-todo { background: #60a5fa; color: white; }
 .btn-clear-todo:active { background: #3b82f6; }
