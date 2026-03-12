@@ -1201,7 +1201,7 @@ function renderPanelContent(listId) {
         <span class="card-title">Items</span>
         <button class="link-btn ${showRefresh ? '' : 'hidden'}" id="${refreshBtnId}" onclick="refreshPanelSuggestions(${list.id})">Refresh</button>
       </div>
-      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearch(${list.id})" onkeydown="onPanelSearchKeydown(event, ${list.id})">
+      <input type="text" class="input mb-12" id="${searchInputId}" placeholder="Search items..." value="${searchVal}" oninput="onPanelSearch(${list.id}, this.value)" onkeydown="onPanelSearchKeydown(event, ${list.id})">
       <div class="chips" id="${chipsContainerId}">${chipsHtml}</div>
     </div>
     <div class="card">
@@ -1225,7 +1225,7 @@ function refreshPanelSuggestions(listId) {
 }
 
 // Lightweight: only update the chips area inside a panel (used for search typing)
-function updatePanelChips(listId) {
+function updatePanelChips(listId, searchVal) {
   const list = lists.find(l => l.id === listId);
   if (!list) return;
   
@@ -1234,9 +1234,12 @@ function updatePanelChips(listId) {
     ? { chip: 'chip-selected-todo', highlight: 'chip-highlight-todo', badge: 'badge-todo' }
     : { chip: 'chip-selected', highlight: 'chip-highlight', badge: 'badge' };
   
-  const isActive = list.id === activeListId;
-  const searchInput = document.getElementById(isActive ? 'searchInput_active' : `searchInput_${listId}`);
-  const searchVal = searchInput ? searchInput.value : '';
+  // If searchVal not provided (e.g. called without typing), fall back to DOM lookup
+  if (searchVal === undefined) {
+    const isActive = list.id === activeListId;
+    const searchInput = document.getElementById(isActive ? 'searchInput_active' : `searchInput_${listId}`);
+    searchVal = searchInput ? searchInput.value : '';
+  }
   
   // Update refresh button visibility
   const refreshBtn = document.getElementById(`refreshBtn_${listId}`);
@@ -1276,8 +1279,8 @@ function updatePanelChips(listId) {
   }).join('');
 }
 
-function onPanelSearch(listId) {
-  updatePanelChips(listId);
+function onPanelSearch(listId, searchVal) {
+  updatePanelChips(listId, searchVal);
 }
 
 function onPanelSearchKeydown(event, listId) {
